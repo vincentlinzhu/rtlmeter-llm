@@ -15,7 +15,7 @@ git clone https://github.com/verilator/rtlmeter.git
 
 # 2. System deps — Ubuntu 24.04 (≈30 s)
 sudo apt update && sudo apt install -y git make autoconf g++ flex bison \
-  libfl2 libfl-dev zlib1g zlib1g-dev python3-venv build-essential
+  libfl2 libfl-dev zlib1g zlib1g-dev python3-venv build-essential help2man
 
 # 3. Build & install Verilator (≈2‑3 min on 8‑vCPU t3.xlarge)
 cd verilator && git checkout stable && autoconf && ./configure && \
@@ -89,7 +89,11 @@ pip install -r rtlmeter/requirements.txt
 
 ```bash
 cd rtlmeter
-python run.py --design designs/amber23/sha256 --tool verilator --timeout 60
+python rtlmeter/run.py \
+  --design designs/amber23/sha256 \
+  --tool verilator \
+  --timeout 60
+
 ```
 
 Expect `PASSED (1/1)`.
