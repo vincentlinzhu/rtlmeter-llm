@@ -9,6 +9,7 @@ Follow the copy‑paste‑ready commands below; they assume a fresh VM with sudo
 ```bash
 # 1. Clone repos
 git clone git@github.com:vincentlinzhu/rtlmeter-llm.git
+cd rtlmeter-llm
 git clone https://github.com/verilator/verilator.git
 git clone https://github.com/verilator/rtlmeter.git
 
