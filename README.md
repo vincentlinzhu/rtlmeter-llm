@@ -89,14 +89,44 @@ pip install -r rtlmeter/requirements.txt
 
 ```bash
 cd rtlmeter
-python rtlmeter/run.py \
-  --design designs/amber23/sha256 \
-  --tool verilator \
-  --timeout 60
-
+./rtlmeter run --cases OpenTitan:default:hello
+./rtlmeter report
 ```
 
-Expect `PASSED (1/1)`.
+Expect:
+```bash 
+@@@ (1/6) OpenTitan:default - Prepare files for compilation
+@@@ === Skipping due to success on earlier run ===
+@@@ (2/6) OpenTitan:default - Verilate
+@@@ === Skipping due to success on earlier run ===
+@@@ (3/6) OpenTitan:default - Build C++
+@@@ === Skipping due to success on earlier run ===
+@@@ (4/6) OpenTitan:default:hello - Prepare files for execution
+@@@ === Skipping due to success on earlier run ===
+@@@ (5/6) OpenTitan:default:hello - Execute simulation
+@@@ === Skipping due to success on earlier run ===
+@@@ (6/6) OpenTitan:default:hello - Post hook
+@@@ === Skipping due to success on earlier run ===
+@@@ All cases passed
+
+verilate
+╒═══════════════════╤═══╤══════════════════╤═══════════════════╕
+│ Case              │ # │ Elapsed time [s] │  Peak memory [MB] │
+╞═══════════════════╪═══╪══════════════════╪═══════════════════╡
+│ OpenTitan:default │ 1 │  70.65           │ 1918.97           │
+╞═══════════════════╪═══╪══════════════════╪═══════════════════╡
+│ All               │   │  70.65           │ 1918.97           │
+╘═══════════════════╧═══╧══════════════════╧═══════════════════╛
+
+execute
+╒═════════════════════════╤═══╤═════════════════╤══════════════════╤══════════════════╕
+│ Case                    │ # │ Sim speed [kHz] │ Elapsed time [s] │ Peak memory [MB] │
+╞═════════════════════════╪═══╪═════════════════╪══════════════════╪══════════════════╡
+│ OpenTitan:default:hello │ 1 │  3.61           │  28.44           │  23.68           │
+╞═════════════════════════╪═══╪═════════════════╪══════════════════╪══════════════════╡
+│ All                     │   │                 │  28.44           │  23.68           │
+╘═════════════════════════╧═══╧═════════════════╧══════════════════╧══════════════════╛
+```
 
 ---
 
@@ -160,7 +190,6 @@ PART 1 Explanation:
    ```bash
    pip install openai==1.* langchain==0.2.* tiktoken \
      git+https://github.com/codellama/agentic
-   export OPENAI_API_KEY=<your-key>
    ```
 4. **Evaluation harness**:
 

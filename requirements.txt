@@ -3,3 +3,4 @@ langchain[all]
 pandas
 jinja2
 rich
+tiktoken
