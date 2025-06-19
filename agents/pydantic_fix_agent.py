@@ -4,12 +4,30 @@ import json
 import os
 import subprocess
 import tempfile
-from dataclasses import dataclass
 from typing import List, Optional
+
+from dotenv import load_dotenv
 
 import openai
 import yaml
 from pydantic import BaseModel
+
+load_dotenv()
+
+
+class OpenAIClient:
+    """Lightweight OpenAI ChatCompletion client."""
+
+    def __init__(self, model: str = "gpt-3.5-turbo") -> None:
+        self.model = model
+
+    def chat(self, messages: List[dict], tools: Optional[List[dict]] = None):
+        return openai.ChatCompletion.create(
+            model=self.model,
+            messages=messages,
+            tools=tools,
+            tool_choice="auto" if tools else None,
+        )
 
 
 class PatchResponse(BaseModel):
@@ -18,16 +36,59 @@ class PatchResponse(BaseModel):
     diff: str
 
 
-def call_llm(system: str, prompt: str) -> str:
+def run_verilator_tool(code: str) -> str:
+    """Helper used by the OpenAI tool call."""
+    with tempfile.NamedTemporaryFile(suffix=".v", delete=False) as tmp:
+        tmp.write(code.encode())
+        tmp_path = tmp.name
+    success = run_verilator(tmp_path)
+    os.remove(tmp_path)
+    return json.dumps({"success": success})
+
+
+def call_llm(client: OpenAIClient, system: str, prompt: str) -> str:
+    """Call OpenAI with optional tool usage."""
     messages = [
         {"role": "system", "content": system},
         {"role": "user", "content": prompt},
     ]
-    try:
-        resp = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages)
-        return resp.choices[0].message["content"].strip()
-    except Exception as exc:
-        return f"LLM_ERROR: {exc}"
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "run_verilator",
+                "description": "Run verilator lint on provided Verilog code",
+                "parameters": {
+                    "type": "object",
+                    "properties": {"code": {"type": "string"}},
+                    "required": ["code"],
+                },
+            },
+        }
+    ]
+
+    resp = client.chat(messages, tools=tools)
+    message = resp.choices[0].message
+
+    # handle tool calls in a single round
+    if hasattr(message, "tool_calls") and message.tool_calls:
+        for call in message.tool_calls:
+            if call.function.name == "run_verilator":
+                args = json.loads(call.function.arguments)
+                output = run_verilator_tool(args["code"])
+                messages.append({"role": "assistant", "content": None, "tool_calls": [call]})
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": call.id,
+                        "name": "run_verilator",
+                        "content": output,
+                    }
+                )
+        resp = client.chat(messages)
+        message = resp.choices[0].message
+
+    return message["content"].strip()
 
 
 def apply_patch(src: str, diff: str) -> str:
@@ -51,7 +112,13 @@ def run_verilator(src_path: str) -> bool:
     return proc.returncode == 0
 
 
-def solve_task(task_yaml: str, save_dir: Optional[str] = None, self_refine: bool = True, max_rounds: int = 3) -> dict:
+def solve_task(
+    task_yaml: str,
+    save_dir: Optional[str] = None,
+    self_refine: bool = True,
+    max_rounds: int = 3,
+    client: Optional[OpenAIClient] = None,
+) -> dict:
     task_dir = os.path.dirname(task_yaml)
     with open(task_yaml) as f:
         meta = yaml.safe_load(f)
@@ -64,10 +131,13 @@ def solve_task(task_yaml: str, save_dir: Optional[str] = None, self_refine: bool
 
     system_prompt = "You are a seasoned Verilog engineer. Given a failing design and a compiler trace, return a unified diff patch fixing the bug. Respond in JSON with field 'diff'."
 
+    if client is None:
+        client = OpenAIClient()
+
     history = []
     for round_idx in range(1, max_rounds + 1):
         user_prompt = f"BUGGY FILE:\n{src}\n\nTRACE:\n{trace}\n"
-        llm_out = call_llm(system_prompt, user_prompt)
+        llm_out = call_llm(client, system_prompt, user_prompt)
         try:
             patch = PatchResponse.model_validate_json(llm_out)
         except Exception:
@@ -97,10 +167,12 @@ def main() -> None:
     parser.add_argument("--save", default=None, help="Directory to save trajectories")
     parser.add_argument("--no_self_refine", action="store_true")
     args = parser.parse_args()
+    client = OpenAIClient()
     for task in sorted(glob.glob(args.task_glob)):
-        result = solve_task(task, save_dir=args.save, self_refine=not args.no_self_refine)
+        result = solve_task(task, save_dir=args.save, self_refine=not args.no_self_refine, client=client)
         print(json.dumps(result))
 
 
 if __name__ == "__main__":
     main()
+    

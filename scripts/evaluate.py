@@ -4,6 +4,8 @@ import importlib.util
 import json
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 
 def load_agent(agent_path: str):
     spec = importlib.util.spec_from_file_location("agent", agent_path)
@@ -13,6 +15,7 @@ def load_agent(agent_path: str):
 
 
 def main():
+    load_dotenv()
     parser = argparse.ArgumentParser(description="Evaluate agent on tasks")
     parser.add_argument("--agent", required=True, help="Path to agent python file")
     parser.add_argument("--tasks", required=True, help="Directory of tasks")
