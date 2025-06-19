@@ -8,9 +8,9 @@ Follow the copy‑paste‑ready commands below; they assume a fresh VM with sudo
 
 ```bash
 # 1. Clone repos
+git clone git@github.com:vincentlinzhu/rtlmeter-llm.git
 git clone https://github.com/verilator/verilator.git
 git clone https://github.com/verilator/rtlmeter.git
-git clone git@github.com:vincentlinzhu/rtlmeter-llm.git
 
 # 2. System deps — Ubuntu 24.04 (≈30 s)
 sudo apt update && sudo apt install -y git make autoconf g++ flex bison \
