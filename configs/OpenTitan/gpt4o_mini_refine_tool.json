@@ -1,0 +1,9 @@
+{
+  "agent": "agents/pydantic_fix_agent.py",
+  "tasks": "OpenTitanTasks/",
+  "model": "gpt-4o-mini",
+  "save": "trajectories/OpenTitan/refine_tool_gpt4o_mini",
+  "out": "results/OpenTitan/refine_tool_gpt4o_mini.json",
+  "no_self_refine": false,
+  "no_verilator_tool": false
+}

@@ -1,0 +1,9 @@
+{
+  "agent": "agents/pydantic_fix_agent.py",
+  "tasks": "OpenTitanTasks/",
+  "model": "gpt-4.1-nano",
+  "save": "trajectories/OpenTitan/refine_tool_gpt41_nano",
+  "out": "results/OpenTitan/refine_tool_gpt41_nano.json",
+  "no_self_refine": false,
+  "no_verilator_tool": false
+}

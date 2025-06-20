@@ -1,8 +1,10 @@
 rtlmeter
 verilator
 tasks
-history
-history_ablation
+trajectories
+run1
+run2
+OpenTitanTasks
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

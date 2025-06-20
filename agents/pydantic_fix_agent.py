@@ -90,7 +90,7 @@ def call_llm(client: OpenAIClient, system: str, prompt: str, original_code: str,
     ]
     
     # always allow apply_patch
-    apply_patch_tool = {
+    apply_patch_tool_def = {
         "type": "function",
         "function": {
             "name": "apply_patch",
@@ -108,7 +108,7 @@ def call_llm(client: OpenAIClient, system: str, prompt: str, original_code: str,
         },
     }
 
-    tools = [apply_patch_tool]
+    tools = [apply_patch_tool_def]
     if not skip_verilator:
         tools.insert(0, {
             "type": "function",
@@ -270,10 +270,10 @@ def solve_task(
             
         try:
             new_src, tool_used = call_llm(
-                client = client,
-                system = system_prompt,
-                prompt= user_prompt,
-                original_code=current_src,
+                client,
+                system_prompt,
+                user_prompt,
+                current_src,
                 skip_verilator=skip_verilator,
             )
             

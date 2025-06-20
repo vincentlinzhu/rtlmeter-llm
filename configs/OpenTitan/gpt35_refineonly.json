@@ -1,0 +1,9 @@
+{
+  "agent": "agents/pydantic_fix_agent.py",
+  "tasks": "OpenTitanTasks/",
+  "model": "gpt-3.5-turbo",
+  "save": "trajectories/OpenTitan/refineonly_gpt35",
+  "out": "results/OpenTitan/refineonly_gpt35.json",
+  "no_self_refine": false,
+  "no_verilator_tool": true
+}
