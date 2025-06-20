@@ -14,6 +14,9 @@ task while the ablation run solved each task in a single attempt or failed.
 - **Refinement helps** – Iterative self-refinement is crucial for handling
   Verilator errors that require multiple code changes. Without refinement, the
   agent cannot recover from initial failures.
+- **Speed vs. success** – Refinement took about 26 minutes for all tasks
+  (~79 s per task) compared with 18 minutes (~53 s per task) for the tool-only
+  run, so the higher success rate comes at the cost of longer runtimes.
 
 ## Why the Agent Succeeds or Fails
 

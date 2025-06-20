@@ -26,13 +26,32 @@ def main():
 
     fig, ax = plt.subplots()
     ax.bar(labels, success_rates, color=["skyblue", "salmon"])
+    ax.bar(labels, success_rates, color=["skyblue", "salmon"], width=0.5)
     ax.set_ylabel("Success Rate")
     ax.set_ylim(0, 105)
     ax.set_title("Task Success Rate Comparison")
     for i, v in enumerate(success_rates):
-        ax.text(i, v + 0.02, f"{v:.2f}", ha="center")
+        ax.text(i, v + 0.5, f"{v:.2f}%", ha="center", va="bottom")
     fig.tight_layout()
     fig.savefig("success_rates.png")
+
+    times_sec = [1581, 1065]  # total runtime in seconds
+    avg_times = [79.06, 53.30]  # seconds per task
+    fig3, ax3 = plt.subplots()
+    bar_locations = range(len(labels))
+    ax3.bar(bar_locations, [t / 60 for t in times_sec], width=0.5,
+            color=["skyblue", "salmon"])
+    ax3.set_xticks(bar_locations)
+    ax3.set_xticklabels(labels)
+    ax3.set_ylim(0, 30)
+    ax3.set_ylabel("Total Runtime (min)")
+    ax3.set_title("Evaluation Time Comparison")
+    for i, (total, avg) in enumerate(zip(times_sec, avg_times)):
+        ax3.text(i, (total / 60) + 0.2,
+                 f"{total // 60}:{total % 60:02d}\n({avg:.2f}s/task)",
+                 ha="center", va="bottom")
+    fig3.tight_layout()
+    fig3.savefig("times.png")
 
     fig2, ax2 = plt.subplots()
     ax2.hist(reason_attempts,
