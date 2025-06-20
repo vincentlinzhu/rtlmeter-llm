@@ -8,7 +8,9 @@ from typing import List, Optional
 
 from dotenv import load_dotenv
 
-import openai
+from openai import OpenAI
+
+client = OpenAI()
 import yaml
 from pydantic import BaseModel
 
@@ -22,12 +24,10 @@ class OpenAIClient:
         self.model = model
 
     def chat(self, messages: List[dict], tools: Optional[List[dict]] = None):
-        return openai.ChatCompletion.create(
-            model=self.model,
-            messages=messages,
-            tools=tools,
-            tool_choice="auto" if tools else None,
-        )
+        return client.chat.completions.create(model=self.model,
+        messages=messages,
+        tools=tools,
+        tool_choice="auto" if tools else None)
 
 
 class PatchResponse(BaseModel):
@@ -175,4 +175,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-    

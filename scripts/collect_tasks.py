@@ -20,7 +20,7 @@ def collect_tasks(design_roots, num_tasks, out_dir):
     for root in design_roots:
         for dirpath, _, files in os.walk(root):
             for f in files:
-                if f.endswith(".v"):
+                if f.endswith(".v") or f.endswith(".sv"):
                     verilog_files.append(os.path.join(dirpath, f))
     random.shuffle(verilog_files)
     selected = verilog_files[:num_tasks]

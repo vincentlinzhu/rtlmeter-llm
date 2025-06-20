@@ -25,8 +25,6 @@ cd verilator && git checkout stable && autoconf && ./configure && \
 python3 -m venv .venv && source .venv/bin/activate
 pip install -U pip && pip install -r rtlmeter/requirements.txt openai langchain[all] pandas jinja2 rich
 
-# 5. Smoke‑test a design via RTLMeter harness
-cd rtlmeter && python run.py --design designs/amber23/sha256 --tool verilator
 ```
 
 ---
@@ -148,7 +146,7 @@ Why it fits this take-home:
 
 ```bash
 verilator --cc ... && c++ && ./sim
-or RTLMeter’s run.py. Pass = 1, fail = 0 — easy leaderboard.
+or RTLMeter. Pass = 1, fail = 0 — easy leaderboard.
 ```
 
 2. Dataset can be auto-generated. A 50-line Python script can:
@@ -182,19 +180,14 @@ PART 1 Explanation:
 
    ```bash
    python scripts/collect_tasks.py \
-     --design_roots designs/amber23 designs/picorv32 \
-     --num_tasks 20 --output tasks/
+     --design_roots rtlmeter/designs/OpenTitan/src \
+     --num_tasks 20 --output tasks
    ```
-3. **Install LLM/agent deps**:
+
+3. **Evaluation harness**:
 
    ```bash
-   pip install openai==1.* langchain==0.2.* tiktoken \
-     git+https://github.com/codellama/agentic
-   ```
-4. **Evaluation harness**:
-
-   ```bash
-   python evaluate.py --agent my_agent.py --tasks tasks/ --out results.json
+   python scripts/evaluate.py --agent agents/pydantic_fix_agent.py --tasks tasks/ --out results.json
    ```
 
 ---
