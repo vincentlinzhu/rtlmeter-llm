@@ -88,7 +88,7 @@ def call_llm(client: OpenAIClient, system: str, prompt: str) -> str:
         resp = client.chat(messages)
         message = resp.choices[0].message
 
-    return message["content"].strip()
+    return message.content.strip()
 
 
 def apply_patch(src: str, diff: str) -> str:
@@ -167,7 +167,7 @@ def main() -> None:
     parser.add_argument("--save", default=None, help="Directory to save trajectories")
     parser.add_argument("--no_self_refine", action="store_true")
     args = parser.parse_args()
-    client = OpenAIClient()
+    client = OpenAIClient(model="gpt-4o-mini")
     for task in sorted(glob.glob(args.task_glob)):
         result = solve_task(task, save_dir=args.save, self_refine=not args.no_self_refine, client=client)
         print(json.dumps(result))
