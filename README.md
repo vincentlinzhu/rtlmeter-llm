@@ -187,14 +187,15 @@ PART 1 Explanation:
 3. **Evaluation harness**:
 
    ```bash
-   python scripts/evaluate.py --agent agents/pydantic_fix_agent.py --tasks tasks/ --out results.json
+   python scripts/evaluate.py --agent agents/pydantic_fix_agent.py \
+     --tasks tasks/ --out results.json --model gpt-4o-mini
    ```
 
 ---
 
-## 4  Agent Design & Evaluation (Part 2)
+## 4  Agent Design & Evaluation (Part 2)
 
-### 4.1 Reference agent
+### 4.1 Reference agent
 
 Suggested agent baseline:
 
@@ -206,14 +207,14 @@ Suggested agent baseline:
 
 ```bash
 python agents/pydantic_fix_agent.py \
-  --task_glob tasks/*/README.yaml --save trajectories/
+  --task_glob tasks/*/README.yaml --save trajectories/ --model gpt-4o-mini
 ```
 
-### 4.2 Run full evaluation + ablations
+### 4.2 Run full evaluation + ablations
 
 ```bash
-python evaluate.py --agent agents/pydantic_fix_agent.py --tasks tasks --out results.json
-python evaluate.py --agent agents/pydantic_fix_agent.py --tasks tasks --out results_toolonly.json --no_self_refine
+python evaluate.py --agent agents/pydantic_fix_agent.py --tasks tasks --out results.json --model gpt-4o-mini
+python evaluate.py --agent agents/pydantic_fix_agent.py --tasks tasks --out results_toolonly.json --no_self_refine --model gpt-4o-mini
 ```
 
 ---

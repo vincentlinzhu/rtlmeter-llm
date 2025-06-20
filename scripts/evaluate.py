@@ -21,6 +21,7 @@ def main():
     parser.add_argument("--tasks", required=True, help="Directory of tasks")
     parser.add_argument("--out", required=True)
     parser.add_argument("--no_self_refine", action="store_true")
+    parser.add_argument("--model", required=True, help="OpenAI model name")
     args = parser.parse_args()
 
     agent = load_agent(args.agent)
@@ -28,7 +29,8 @@ def main():
 
     results = []
     for tp in task_paths:
-        res = agent.solve_task(tp, self_refine=not args.no_self_refine)
+        client = agent.OpenAIClient(model=args.model)
+        res = agent.solve_task(tp, self_refine=not args.no_self_refine, client=client)
         results.append(res)
         print(json.dumps(res))
 

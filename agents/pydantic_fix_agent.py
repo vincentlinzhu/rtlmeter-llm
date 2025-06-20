@@ -20,7 +20,7 @@ load_dotenv()
 class OpenAIClient:
     """Lightweight OpenAI ChatCompletion client."""
 
-    def __init__(self, model: str = "gpt-3.5-turbo") -> None:
+    def __init__(self, model: str) -> None:
         self.model = model
 
     def chat(self, messages: List[dict], tools: Optional[List[dict]] = None):
@@ -132,7 +132,7 @@ def solve_task(
     system_prompt = "You are a seasoned Verilog engineer. Given a failing design and a compiler trace, return a unified diff patch fixing the bug. Respond in JSON with field 'diff'."
 
     if client is None:
-        client = OpenAIClient()
+        raise ValueError("OpenAI client must be provided with a model name")
 
     history = []
     for round_idx in range(1, max_rounds + 1):
@@ -166,8 +166,9 @@ def main() -> None:
     parser.add_argument("--task_glob", required=True)
     parser.add_argument("--save", default=None, help="Directory to save trajectories")
     parser.add_argument("--no_self_refine", action="store_true")
+    parser.add_argument("--model", required=True, help="OpenAI model name")
     args = parser.parse_args()
-    client = OpenAIClient(model="gpt-4o-mini")
+    client = OpenAIClient(model=args.model)
     for task in sorted(glob.glob(args.task_glob)):
         result = solve_task(task, save_dir=args.save, self_refine=not args.no_self_refine, client=client)
         print(json.dumps(result))
