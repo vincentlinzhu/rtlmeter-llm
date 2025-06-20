@@ -184,7 +184,13 @@ PART 1 Explanation:
      --num_tasks 20 --output tasks
    ```
 
-3. **Evaluation harness**:
+3. **Sanity-check the tasks**:
+
+   ```bash
+   python scripts/sanity_check_tasks.py tasks
+   ```
+
+4. **Evaluation harness**:
 
    ```bash
    python scripts/evaluate.py --agent agents/pydantic_fix_agent.py \
@@ -216,6 +222,10 @@ python agents/pydantic_fix_agent.py \
 python evaluate.py --agent agents/pydantic_fix_agent.py --tasks tasks --out results.json --model gpt-4o-mini
 python evaluate.py --agent agents/pydantic_fix_agent.py --tasks tasks --out results_toolonly.json --no_self_refine --model gpt-4o-mini
 ```
+
+The second command disables the self-refinement loop via `--no_self_refine`.
+By comparing `results_toolonly.json` with the baseline `results.json`, you can
+measure how much iterative patch refinement improves task success.
 
 ---
 
