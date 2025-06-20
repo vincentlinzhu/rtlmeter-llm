@@ -218,7 +218,15 @@ def solve_task(
     task_dir = os.path.dirname(task_yaml)
     with open(task_yaml) as f:
         meta = yaml.safe_load(f)
-    bug_file = os.path.join(task_dir, meta.get("bug_file", "bug.v"))
+    bug_file = meta.get("bug_file")
+    if bug_file is None:
+        for candidate in ["bug.v", "bug.sv"]:
+            if os.path.exists(os.path.join(task_dir, candidate)):
+                bug_file = candidate
+                break
+        else:
+            bug_file = "bug.v"
+    bug_file = os.path.join(task_dir, bug_file)
     trace_file = os.path.join(task_dir, meta.get("trace", "trace.log"))
     with open(bug_file) as f:
         original_src = f.read()

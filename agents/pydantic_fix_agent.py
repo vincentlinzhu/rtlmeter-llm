@@ -32,7 +32,7 @@ class OpenAIClient:
 
 def run_verilator_tool(code: str) -> str:
     """Helper used by the OpenAI tool call."""
-    with tempfile.NamedTemporaryFile(suffix=".v", delete=False) as tmp:
+    with tempfile.NamedTemporaryFile(suffix=".sv", delete=False) as tmp:
         tmp.write(code.encode())
         tmp_path = tmp.name
     success, stderr = run_verilator(tmp_path)
@@ -152,7 +152,7 @@ def run_verilator(src_path: str) -> tuple[bool, str]:
 
 def solve_task(
     task_yaml: str,
-    save_dir: Optional[str] = "history/",
+    save_dir: Optional[str] = "None",
     self_refine: bool = True,
     max_rounds: int = 5,
     client: Optional[OpenAIClient] = None,
@@ -160,7 +160,17 @@ def solve_task(
     task_dir = os.path.dirname(task_yaml)
     with open(task_yaml) as f:
         meta = yaml.safe_load(f)
-    bug_file = os.path.join(task_dir, meta.get("bug_file", "bug.v"))
+    # bug_file = os.path.join(task_dir, meta.get("bug_file", "bug.sv"))
+    bug_file = meta.get("bug_file")
+    if bug_file is None:
+        # Fall back to common names
+        for candidate in ["bug.v", "bug.sv"]:
+            if os.path.exists(os.path.join(task_dir, candidate)):
+                bug_file = candidate
+                break
+        else:
+            bug_file = "bug.v"
+    bug_file = os.path.join(task_dir, bug_file)
     trace_file = os.path.join(task_dir, meta.get("trace", "trace.log"))
     with open(bug_file) as f:
         original_src = f.read()
@@ -202,7 +212,7 @@ def solve_task(
             new_src, tool_used = call_llm(client, system_prompt, user_prompt, current_src)
             
             # Test the fixed code
-            with tempfile.NamedTemporaryFile(suffix=".v", delete=False) as tmp:
+            with tempfile.NamedTemporaryFile(suffix=".sv", delete=False) as tmp:
                 tmp.write(new_src.encode())
                 tmp_path = tmp.name
             success, stderr = run_verilator(tmp_path)

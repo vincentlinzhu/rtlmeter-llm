@@ -85,8 +85,13 @@ def collect_tasks(design_roots, num_tasks, out_dir):
         with open(vf) as f:
             src = f.read()
         bug_src = inject_bug(src)
-        bug_path = os.path.join(tdir, "bug.v")
-        fixed_path = os.path.join(tdir, "fixed.v")
+        # bug_path = os.path.join(tdir, "bug.sv")
+        # fixed_path = os.path.join(tdir, "fixed.sv")
+        ext = os.path.splitext(vf)[1]  # preserve '.v' or '.sv'
+        bug_name = f"bug{ext}"
+        fixed_name = f"fixed{ext}"
+        bug_path = os.path.join(tdir, bug_name)
+        fixed_path = os.path.join(tdir, fixed_name)
         with open(bug_path, "w") as f:
             f.write(bug_src)
         with open(fixed_path, "w") as f:
@@ -99,7 +104,8 @@ def collect_tasks(design_roots, num_tasks, out_dir):
         except FileNotFoundError:
             with open(trace_file, "w") as log:
                 log.write("verilator_not_found\n")
-        meta = {"bug_file": "bug.v", "fixed_file": "fixed.v", "trace": "trace.log"}
+        # meta = {"bug_file": "bug.sv", "fixed_file": "fixed.sv", "trace": "trace.log"}
+        meta = {"bug_file": bug_name, "fixed_file": fixed_name, "trace": "trace.log"}
         with open(os.path.join(tdir, "README.yaml"), "w") as f:
             yaml.safe_dump(meta, f)
 
