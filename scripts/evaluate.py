@@ -3,6 +3,7 @@ import glob
 import importlib.util
 import json
 from pathlib import Path
+from tqdm import tqdm
 
 from dotenv import load_dotenv
 
@@ -28,7 +29,7 @@ def main():
     task_paths = sorted(glob.glob(str(Path(args.tasks) / "*" / "README.yaml")))
 
     results = []
-    for tp in task_paths:
+    for tp in tqdm(task_paths, desc="Solving tasks", unit="task"):
         client = agent.OpenAIClient(model=args.model)
         res = agent.solve_task(tp, self_refine=not args.no_self_refine, client=client)
         results.append(res)
