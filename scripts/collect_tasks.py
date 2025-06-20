@@ -6,6 +6,8 @@ import yaml
 
 
 def inject_bug(src: str) -> str:
+    if ";" in src:
+        return src.replace(";", "", 1)
     if "==" in src:
         return src.replace("==", "!=", 1)
     if "0" in src:
@@ -40,8 +42,7 @@ def collect_tasks(design_roots, num_tasks, out_dir):
         trace_file = os.path.join(tdir, "trace.log")
         try:
             verilator_cmd = ["verilator", "--lint-only", bug_path]
-            for root in design_roots:
-                verilator_cmd += ["-y", root, "-I", root]
+            # verilator_cmd += ["-y", design_roots[0], "-I", design_roots[0]]
             proc = subprocess.run(verilator_cmd, capture_output=True, text=True)
             with open(trace_file, "w") as log:
                 log.write(proc.stdout + proc.stderr)

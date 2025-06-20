@@ -3,6 +3,8 @@ import glob
 import json
 import os
 import subprocess
+import difflib
+import re
 import tempfile
 from typing import List, Optional
 
@@ -41,9 +43,9 @@ def run_verilator_tool(code: str) -> str:
     with tempfile.NamedTemporaryFile(suffix=".v", delete=False) as tmp:
         tmp.write(code.encode())
         tmp_path = tmp.name
-    success = run_verilator(tmp_path)
+    success, stderr = run_verilator(tmp_path)
     os.remove(tmp_path)
-    return json.dumps({"success": success})
+    return json.dumps({"success": success, "stderr": stderr})
 
 
 def call_llm(client: OpenAIClient, system: str, prompt: str) -> str:
@@ -67,7 +69,10 @@ def call_llm(client: OpenAIClient, system: str, prompt: str) -> str:
         }
     ]
 
-    resp = client.chat(messages, tools=tools)
+    resp = client.chat(
+        messages
+        # tools=tools
+    )
     message = resp.choices[0].message
 
     # handle tool calls in a single round
@@ -91,30 +96,83 @@ def call_llm(client: OpenAIClient, system: str, prompt: str) -> str:
     return message.content.strip()
 
 
+# def apply_patch(src: str, diff: str) -> str:
+#     """Apply unified diff patch to the given source."""
+#     with tempfile.TemporaryDirectory() as td:
+#         src_path = os.path.join(td, "buggy_file.v")
+#         with open(src_path, "w") as f:
+#             f.write(src)
+#         patch_path = os.path.join(td, "patch.diff")
+#         with open(patch_path, "w") as f:
+#             f.write(diff)
+#         res = subprocess.run(["patch", src_path, patch_path], capture_output=True, text=True)
+#         if res.returncode == 0:
+#             with open(src_path) as f:
+#                 return f.read()
+#     return src
+
+
 def apply_patch(src: str, diff: str) -> str:
-    """Apply unified diff patch to the given source."""
-    with tempfile.TemporaryDirectory() as td:
-        src_path = os.path.join(td, "bug.v")
-        with open(src_path, "w") as f:
-            f.write(src)
-        patch_path = os.path.join(td, "patch.diff")
-        with open(patch_path, "w") as f:
-            f.write(diff)
-        res = subprocess.run(["patch", src_path, patch_path], capture_output=True, text=True)
-        if res.returncode == 0:
-            with open(src_path) as f:
-                return f.read()
-    return src
+    """Apply patch using Python's difflib for more reliable parsing."""
+    # Parse the unified diff
+    lines = diff.strip().split('\n')
+    
+    # Find the lines that need to be changed
+    changes = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if line.startswith('@@'):
+            # Parse the hunk header
+            match = re.match(r'@@ -(\d+),?(\d*) \+(\d+),?(\d*) @@', line)
+            if match:
+                old_start = int(match.group(1))
+                old_count = int(match.group(2)) if match.group(2) else 1
+                new_start = int(match.group(3))
+                new_count = int(match.group(4)) if match.group(4) else 1
+                
+                # Collect the changes in this hunk
+                i += 1
+                old_lines = []
+                new_lines = []
+                
+                while i < len(lines) and not lines[i].startswith('@@'):
+                    if lines[i].startswith('-'):
+                        old_lines.append(lines[i][1:])
+                    elif lines[i].startswith('+'):
+                        new_lines.append(lines[i][1:])
+                    elif lines[i].startswith(' '):
+                        # Context line - add to both
+                        old_lines.append(lines[i][1:])
+                        new_lines.append(lines[i][1:])
+                    i += 1
+                
+                changes.append((old_start - 1, old_lines, new_lines))  # Convert to 0-based indexing
+            else:
+                i += 1
+        else:
+            i += 1
+    
+    # Apply the changes
+    src_lines = src.split('\n')
+    
+    # Apply changes in reverse order to avoid index shifting issues
+    for start_idx, old_lines, new_lines in reversed(changes):
+        # Replace the old lines with new lines
+        end_idx = start_idx + len(old_lines)
+        src_lines[start_idx:end_idx] = new_lines
+    
+    return '\n'.join(src_lines)
 
 
 def run_verilator(src_path: str) -> bool:
     proc = subprocess.run(["verilator", "--lint-only", src_path], capture_output=True, text=True)
-    return proc.returncode == 0
+    return proc.returncode == 0, proc.stderr
 
 
 def solve_task(
     task_yaml: str,
-    save_dir: Optional[str] = None,
+    save_dir: Optional[str] = "/history",
     self_refine: bool = True,
     max_rounds: int = 3,
     client: Optional[OpenAIClient] = None,
@@ -127,38 +185,101 @@ def solve_task(
     with open(bug_file) as f:
         src = f.read()
     with open(trace_file) as f:
-        trace = f.read()
+        original_trace = f.read()
 
-    system_prompt = "You are a seasoned Verilog engineer. Given a failing design and a compiler trace, return a unified diff patch fixing the bug. Respond in JSON with field 'diff'."
+    system_prompt = system_prompt = """You are a seasoned Verilog engineer. Given a failing design and a compiler trace, return a unified diff patch fixing the bug. Respond in JSON with field 'diff'. The diff should be in unified diff format like:
+    @@ -10,1 +10,1 @@
+    -old line
+    +new line
+
+    Respond *only* with the JSON object, no markdown``` blocks."""
 
     if client is None:
         raise ValueError("OpenAI client must be provided with a model name")
 
     history = []
+    current_trace = original_trace
+    
     for round_idx in range(1, max_rounds + 1):
-        user_prompt = f"BUGGY FILE:\n{src}\n\nTRACE:\n{trace}\n"
-        llm_out = call_llm(client, system_prompt, user_prompt)
+        # Build the user prompt with current trace (includes new errors from previous attempts)
+        user_prompt = f"BUGGY FILE:\n{src}\n\nTRACE:\n{current_trace}\n"
+        
+        # Add context from previous attempts if this isn't the first round
+        if round_idx > 1:
+            user_prompt += f"\nPREVIOUS ATTEMPTS:\n"
+            for i, h in enumerate(history, 1):
+                user_prompt += f"Attempt {i}: {'SUCCESS' if h['success'] else 'FAILED'}\n"
+                if not h['success'] and 'stderr' in h:
+                    user_prompt += f"Error: {h['stderr']}\n"
+            user_prompt += f"\nThe above attempts failed. Please fix ALL the issues shown in the traces.\n"
+        
         try:
-            patch = PatchResponse.model_validate_json(llm_out)
+            # For testing, using your hardcoded response, but in real usage this would be:
+            # llm_out = call_llm(client, system_prompt, user_prompt)
+            
+            # llm_out = json.dumps({"diff":"--- buggy_file.v\n+++ fixed_file.v\n@@ -1,6 +1,6 @@\n // Copyright lowRISC contributors (OpenTitan project).\n // Licensed under the Apache License, Version 2.0, see LICENSE for details.\n // SPDX-License-Identifier: Apache-2.0\n //\n-package pwrmgr_reg_pkg\n+package pwrmgr_reg_pkg;\n \n   // Param list\n   parameter int NumWkups = 6;\n"})
+            llm_out = call_llm(client, system_prompt, user_prompt)
+            data = json.loads(llm_out)
+
+            # if diff came back as a list, join it into a single string
+            if isinstance(data.get("diff"), list):
+                data["diff"] = "\n".join(data["diff"])
+
+            # now validate
+            patch = PatchResponse(**data)
+            # patch = PatchResponse.model_validate_json(llm_out)
         except Exception:
             patch = PatchResponse(diff=llm_out)
+        
+        # Apply the patch
         new_src = apply_patch(src, patch.diff)
+        
+        # Test the patched code
         with tempfile.NamedTemporaryFile(suffix=".v", delete=False) as tmp:
             tmp.write(new_src.encode())
             tmp_path = tmp.name
-        success = run_verilator(tmp_path)
+        
+        success, stderr = run_verilator(tmp_path)
         os.remove(tmp_path)
-        history.append({"round": round_idx, "prompt": user_prompt, "response": llm_out, "success": success})
-        if success or not self_refine:
+        
+        # Store the attempt with stderr information
+        attempt_record = {
+            "round": round_idx, 
+            "prompt": user_prompt, 
+            "response": llm_out, 
+            "success": success,
+            "stderr": stderr
+        }
+        history.append(attempt_record)
+        
+        if success:
+            print(f"Success on round {round_idx}")
             break
-        src = new_src
+        else:
+            print(f"Round {round_idx} failed with errors:")
+            print(stderr)
+            
+            if self_refine:
+                # Update src and trace for next iteration
+                src = new_src
+                current_trace = stderr  # Use the new error as the trace for next round
+            else:
+                break
+    
+    # Save the history
     if save_dir:
         os.makedirs(save_dir, exist_ok=True)
         base = os.path.join(save_dir, os.path.basename(task_dir) + ".jsonl")
         with open(base, "w") as f:
             for h in history:
                 f.write(json.dumps(h) + "\n")
-    return {"task": os.path.basename(task_dir), "success": history[-1]["success"], "attempts": len(history)}
+    
+    return {
+        "task": os.path.basename(task_dir), 
+        "success": history[-1]["success"], 
+        "attempts": len(history),
+        "final_stderr": history[-1]["stderr"] if not history[-1]["success"] else ""
+    }
 
 
 def main() -> None:
