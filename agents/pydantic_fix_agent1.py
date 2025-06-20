@@ -4,8 +4,6 @@ import json
 import os
 import subprocess
 import tempfile
-import threading
-import time
 from typing import List, Optional
 
 from dotenv import load_dotenv
@@ -17,39 +15,6 @@ import yaml
 from pydantic import BaseModel
 
 load_dotenv()
-
-
-class ProgressTimer:
-    """Simple progress timer to show elapsed time during LLM calls."""
-    
-    def __init__(self):
-        self.start_time = None
-        self.stop_event = None
-        self.thread = None
-        
-    def start(self, message="LLM processing"):
-        """Start the progress timer."""
-        self.start_time = time.time()
-        self.stop_event = threading.Event()
-        
-        def show_progress():
-            while not self.stop_event.is_set():
-                elapsed = time.time() - self.start_time
-                print(f"\r{message}... {elapsed:.1f}s", end="", flush=True)
-                time.sleep(0.5)
-        
-        self.thread = threading.Thread(target=show_progress, daemon=True)
-        self.thread.start()
-    
-    def stop(self):
-        """Stop the progress timer."""
-        if self.stop_event:
-            self.stop_event.set()
-        if self.thread:
-            self.thread.join(timeout=1.0)
-        elapsed = time.time() - self.start_time if self.start_time else 0
-        print(f"\rCompleted in {elapsed:.1f}s" + " " * 20)  # Clear the line
-        return elapsed
 
 
 class OpenAIClient:
@@ -67,7 +32,7 @@ class OpenAIClient:
 
 def run_verilator_tool(code: str) -> str:
     """Helper used by the OpenAI tool call."""
-    with tempfile.NamedTemporaryFile(suffix=".v", delete=False) as tmp:
+    with tempfile.NamedTemporaryFile(suffix=".sv", delete=False) as tmp:
         tmp.write(code.encode())
         tmp_path = tmp.name
     success, stderr = run_verilator(tmp_path)
@@ -82,8 +47,6 @@ def apply_patch_tool(original_code: str, fixed_code: str) -> str:
 
 def call_llm(client: OpenAIClient, system: str, prompt: str, original_code: str) -> tuple[str, bool]:
     """Call OpenAI with tool usage for both verification and patching."""
-    timer = ProgressTimer()
-    
     messages = [
         {"role": "system", "content": system},
         {"role": "user", "content": prompt},
@@ -121,17 +84,11 @@ def call_llm(client: OpenAIClient, system: str, prompt: str, original_code: str)
         }
     ]
 
-    timer.start("Calling LLM for initial analysis")
-    try:
-        resp = client.chat(messages, tools=tools)
-    finally:
-        timer.stop()
-        
+    resp = client.chat(messages, tools=tools)
     message = resp.choices[0].message
 
     fixed_code = None
     tool_used = False
-    tool_call_count = 0
 
     # Handle tool calls in a loop until no more tool calls
     while hasattr(message, "tool_calls") and message.tool_calls:
@@ -142,17 +99,9 @@ def call_llm(client: OpenAIClient, system: str, prompt: str, original_code: str)
         })
         
         for call in message.tool_calls:
-            tool_call_count += 1
-            
             if call.function.name == "run_verilator":
-                print(f"Tool call {tool_call_count}: Running Verilator verification...")
-                timer.start("Running Verilator")
-                try:
-                    args = json.loads(call.function.arguments)
-                    output = run_verilator_tool(args["code"])
-                finally:
-                    timer.stop()
-                    
+                args = json.loads(call.function.arguments)
+                output = run_verilator_tool(args["code"])
                 messages.append({
                     "role": "tool",
                     "tool_call_id": call.id,
@@ -162,7 +111,6 @@ def call_llm(client: OpenAIClient, system: str, prompt: str, original_code: str)
                 tool_used = True
                 
             elif call.function.name == "apply_patch":
-                print(f"Tool call {tool_call_count}: Applying patch...")
                 args = json.loads(call.function.arguments)
                 fixed_code = args["fixed_code"]
                 output = apply_patch_tool(original_code, fixed_code)
@@ -174,18 +122,12 @@ def call_llm(client: OpenAIClient, system: str, prompt: str, original_code: str)
                 })
                 tool_used = True
         
-        # Get next response if there were tool calls
-        if tool_call_count > 0:
-            timer.start("LLM processing tool results")
-            try:
-                resp = client.chat(messages, tools=tools)
-            finally:
-                timer.stop()
-            message = resp.choices[0].message
+        # Get next response
+        resp = client.chat(messages, tools=tools)
+        message = resp.choices[0].message
 
     # If no patch tool was called, try to extract code from the response
     if fixed_code is None and message.content:
-        print("No patch tool used, attempting to extract code from response...")
         # Fallback: try to extract code from the response
         content = message.content.strip()
         # Look for code blocks or assume the entire response is code
@@ -210,7 +152,7 @@ def run_verilator(src_path: str) -> tuple[bool, str]:
 
 def solve_task(
     task_yaml: str,
-    save_dir: Optional[str] = "history/",
+    save_dir: Optional[str] = "None",
     self_refine: bool = True,
     max_rounds: int = 5,
     client: Optional[OpenAIClient] = None,
@@ -218,8 +160,10 @@ def solve_task(
     task_dir = os.path.dirname(task_yaml)
     with open(task_yaml) as f:
         meta = yaml.safe_load(f)
+    # bug_file = os.path.join(task_dir, meta.get("bug_file", "bug.sv"))
     bug_file = meta.get("bug_file")
     if bug_file is None:
+        # Fall back to common names
         for candidate in ["bug.v", "bug.sv"]:
             if os.path.exists(os.path.join(task_dir, candidate)):
                 bug_file = candidate
@@ -235,16 +179,16 @@ def solve_task(
 
     system_prompt = """You are a seasoned Verilog engineer. Given a failing design and a compiler trace, fix the bug in the code.
 
-You have access to two tools:
-1. run_verilator: Test Verilog code for syntax/lint errors
-2. apply_patch: Provide the complete corrected Verilog code
+    You have access to two tools:
+    1. run_verilator: Test Verilog code for syntax/lint errors
+    2. apply_patch: Provide the complete corrected Verilog code
 
-Your workflow should be:
-1. Analyze the buggy code and error trace
-2. Optionally use run_verilator to test your understanding
-3. Use apply_patch to provide the complete fixed code
+    Your workflow should be:
+    1. Analyze the buggy code and error trace
+    2. Optionally use run_verilator to test your understanding
+    3. Use apply_patch to provide the complete fixed code
 
-Focus on providing clean, working Verilog code that addresses all the issues in the trace."""
+    Focus on providing clean, working Verilog code that addresses all the issues in the trace."""
 
     if client is None:
         raise ValueError("OpenAI client must be provided with a model name")
@@ -254,7 +198,6 @@ Focus on providing clean, working Verilog code that addresses all the issues in 
     current_trace = original_trace
     
     for round_idx in range(1, max_rounds + 1):
-        print(f"\n=== Round {round_idx}/{max_rounds} ===")
         user_prompt = f"BUGGY FILE:\n{current_src}\n\nTRACE:\n{current_trace}\n"
         
         if round_idx > 1:
@@ -269,8 +212,7 @@ Focus on providing clean, working Verilog code that addresses all the issues in 
             new_src, tool_used = call_llm(client, system_prompt, user_prompt, current_src)
             
             # Test the fixed code
-            print("Testing fixed code with Verilator...")
-            with tempfile.NamedTemporaryFile(suffix=".v", delete=False) as tmp:
+            with tempfile.NamedTemporaryFile(suffix=".sv", delete=False) as tmp:
                 tmp.write(new_src.encode())
                 tmp_path = tmp.name
             success, stderr = run_verilator(tmp_path)
@@ -293,10 +235,10 @@ Focus on providing clean, working Verilog code that addresses all the issues in 
         history.append(attempt_record)
         
         if success:
-            print(f"✅ Success on round {round_idx}!")
+            print(f"Success on round {round_idx}")
             break
         else:
-            print(f"❌ Round {round_idx} failed with errors:")
+            print(f"Round {round_idx} failed with errors:")
             print(stderr)
             
             if self_refine:

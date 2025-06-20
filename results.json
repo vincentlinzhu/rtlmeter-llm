@@ -1,6 +1,6 @@
 [
   {
-    "task": "task_00",
+    "task": "missing_semicolon",
     "success": true,
     "attempts": 2,
     "final_stderr": ""
