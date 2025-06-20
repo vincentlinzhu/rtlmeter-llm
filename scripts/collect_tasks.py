@@ -20,19 +20,14 @@ def misspell_first(word: str, wrong: str, src: str) -> str:
 
 # --- master list of possible bug generators ---------------------------------
 BUG_TRANSFORMS = [
-    #  syntax deletions
-    lambda s: drop_first(";", s),                     # remove semicolon
-    lambda s: drop_first(")", s),                     # drop closing paren
-    #  operator flips
+    lambda s: drop_first(";", s),
+    lambda s: drop_first(")", s),
     lambda s: flip_first("==", "!=", s),
     lambda s: flip_first("&&", "||", s),
     lambda s: flip_first("<",  ">",  s),
-    #  literal tweaks
     lambda s: flip_first("1'b0", "1'b1", s),
-    lambda s: flip_first("0", "1", s),                # first decimal 0 → 1
-    #  clock-edge reversal
+    lambda s: flip_first("0", "1", s),
     lambda s: s.replace("posedge", "negedge", 1),
-    #  keyword misspellings
     lambda s: misspell_first("module",   "modul",    s),
     lambda s: misspell_first("endmodule","endmodul", s),
     lambda s: misspell_first("begin",    "begn",     s),
@@ -40,41 +35,66 @@ BUG_TRANSFORMS = [
 ]
 
 def inject_bug(src: str) -> str:
-    """
-    Inject a single random bug into *src*.
-
-    The function scans the candidate transforms above and keeps only those that
-    are applicable to the current source (i.e. their trigger string is present).
-    One applicable transform is chosen uniformly at random and applied.
-    If, for some reason, none match, we append a dummy comment.
-    """
-    # Figure out which transforms can actually fire on this file
     applicable = [t for t in BUG_TRANSFORMS if t.__code__.co_consts[1] in src]
-    if not applicable:          # nothing found? fall back
+    if not applicable:
         return src + "\n// BUG"
+    return random.choice(applicable)(src)
 
-    transform = random.choice(applicable)
-    return transform(src)
+# --- new helper to detect includes or imports -------------------------------
+import re
 
+def has_imports_or_includes(src: str) -> bool:
+    # 1) textual includes
+    if re.search(r'`include\b', src):
+        return True
 
-# def inject_bug(src: str) -> str:
-#     if ";" in src:
-#         return src.replace(";", "", 1)
-#     if "==" in src:
-#         return src.replace("==", "!=", 1)
-#     if "0" in src:
-#         return src.replace("0", "1", 1)
-#     return src + "\n// BUG"
+    # 2) SV import statements
+    if re.search(r'\bimport\b', src):
+        return True
+
+    # 3) package declarations
+    if re.search(r'\bpackage\s+\w+\s*;', src):
+        return True
+
+    # 4) scope-resolution operator (e.g. pkg::symbol)
+    if '::' in src:
+        return True
+
+    # 5) any macro use (e.g. `ASSERT_INIT)
+    if re.search(r'`[A-Za-z_]\w*', src):
+        return True
+
+    # 6) parameterized instantiation: Foo #(...) instName (...)
+    if re.search(r'\b\w+\s*#\s*\(', src):
+        return True
+
+    # 7) unparameterized instantiation: Foo instName (...)
+    #    make sure we’re not matching the module header itself
+    if re.search(r'^\s*(?!module\b)\w+\s+\w+\s*\(', src, re.MULTILINE):
+        return True
+
+    return False
+
 
 
 def collect_tasks(design_roots, num_tasks, out_dir):
     os.makedirs(out_dir, exist_ok=True)
     verilog_files = []
+
+    # gather all .v/.sv that do NOT contain imports/includes
     for root in design_roots:
         for dirpath, _, files in os.walk(root):
             for f in files:
-                if f.endswith(".v") or f.endswith(".sv"):
-                    verilog_files.append(os.path.join(dirpath, f))
+                if not (f.endswith(".v") or f.endswith(".sv")):
+                    continue
+                path = os.path.join(dirpath, f)
+                with open(path, 'r', encoding='utf-8', errors='ignore') as fh:
+                    src = fh.read()
+                if has_imports_or_includes(src):
+                    # skip any file with includes or imports
+                    continue
+                verilog_files.append(path)
+
     random.shuffle(verilog_files)
     selected = verilog_files[:num_tasks]
 
@@ -82,43 +102,49 @@ def collect_tasks(design_roots, num_tasks, out_dir):
         task_name = f"task_{idx:02d}"
         tdir = os.path.join(out_dir, task_name)
         os.makedirs(tdir, exist_ok=True)
+
         with open(vf) as f:
             src = f.read()
+            
         bug_src = inject_bug(src)
-        # bug_path = os.path.join(tdir, "bug.sv")
-        # fixed_path = os.path.join(tdir, "fixed.sv")
+
         ext = os.path.splitext(vf)[1]  # preserve '.v' or '.sv'
-        bug_name = f"bug{ext}"
+        bug_name  = f"bug{ext}"
         fixed_name = f"fixed{ext}"
-        bug_path = os.path.join(tdir, bug_name)
+        bug_path   = os.path.join(tdir, bug_name)
         fixed_path = os.path.join(tdir, fixed_name)
-        with open(bug_path, "w") as f:
-            f.write(bug_src)
-        with open(fixed_path, "w") as f:
-            f.write(src)
+
+        with open(bug_path,   "w") as f: f.write(bug_src)
+        with open(fixed_path, "w") as f: f.write(src)
+
         trace_file = os.path.join(tdir, "trace.log")
         try:
-            proc = subprocess.run(["verilator", "--lint-only", bug_path], capture_output=True, text=True)
-            with open(trace_file, "w") as log:
-                log.write(proc.stdout + proc.stderr)
+            proc = subprocess.run(
+                ["verilator", "--lint-only", bug_path],
+                capture_output=True, text=True
+            )
+            out = proc.stdout + proc.stderr
         except FileNotFoundError:
-            with open(trace_file, "w") as log:
-                log.write("verilator_not_found\n")
-        # meta = {"bug_file": "bug.sv", "fixed_file": "fixed.sv", "trace": "trace.log"}
-        meta = {"bug_file": bug_name, "fixed_file": fixed_name, "trace": "trace.log"}
+            out = "verilator_not_found\n"
+
+        with open(trace_file, "w") as log:
+            log.write(out)
+
+        meta = {"bug_file": bug_name,
+                "fixed_file": fixed_name,
+                "trace": "trace.log"}
         with open(os.path.join(tdir, "README.yaml"), "w") as f:
             yaml.safe_dump(meta, f)
 
-
 def main():
-    parser = argparse.ArgumentParser(description="Generate bug-fixing tasks from Verilog designs")
+    parser = argparse.ArgumentParser(
+        description="Generate bug-fixing tasks from Verilog designs"
+    )
     parser.add_argument("--design_roots", nargs="+", required=True)
-    parser.add_argument("--num_tasks", type=int, required=True)
-    parser.add_argument("--output", required=True)
+    parser.add_argument("--num_tasks",    type=int, required=True)
+    parser.add_argument("--output",       required=True)
     args = parser.parse_args()
     collect_tasks(args.design_roots, args.num_tasks, args.output)
 
-
 if __name__ == "__main__":
     main()
-    
