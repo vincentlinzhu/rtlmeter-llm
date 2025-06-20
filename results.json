@@ -1,7 +1,8 @@
 [
   {
     "task": "task_00",
-    "success": false,
-    "attempts": 3
+    "success": true,
+    "attempts": 2,
+    "final_stderr": ""
   }
 ]

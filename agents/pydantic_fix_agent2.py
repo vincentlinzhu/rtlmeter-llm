@@ -169,16 +169,16 @@ def solve_task(
 
     system_prompt = """You are a seasoned Verilog engineer. Given a failing design and a compiler trace, fix the bug in the code.
 
-    You have access to two tools:
-    1. run_verilator: Test Verilog code for syntax/lint errors
-    2. apply_patch: Provide the complete corrected Verilog code
+You have access to two tools:
+1. run_verilator: Test Verilog code for syntax/lint errors
+2. apply_patch: Provide the complete corrected Verilog code
 
-    Your workflow should be:
-    1. Analyze the buggy code and error trace
-    2. Optionally use run_verilator to test your understanding
-    3. Use apply_patch to provide the complete fixed code
+Your workflow should be:
+1. Analyze the buggy code and error trace
+2. Optionally use run_verilator to test your understanding
+3. Use apply_patch to provide the complete fixed code
 
-    Focus on providing clean, working Verilog code that addresses all the issues in the trace."""
+Focus on providing clean, working Verilog code that addresses all the issues in the trace."""
 
     if client is None:
         raise ValueError("OpenAI client must be provided with a model name")
@@ -272,4 +272,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-    
