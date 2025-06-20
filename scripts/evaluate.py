@@ -23,6 +23,7 @@ def main():
     parser.add_argument("--out", required=True)
     parser.add_argument("--save", default=None, help="Directory to save trajectories")
     parser.add_argument("--no_self_refine", action="store_true")
+    parser.add_argument("--no_verilator_tool", action="store_true", help="Disable the run_verilator tool ablation")
     parser.add_argument("--model", required=True, help="OpenAI model name")
     args = parser.parse_args()
 
@@ -32,7 +33,13 @@ def main():
     results = []
     for tp in tqdm(task_paths, desc="Solving tasks", unit="task"):
         client = agent.OpenAIClient(model=args.model)
-        res = agent.solve_task(tp, save_dir=args.save, self_refine=not args.no_self_refine, client=client)
+        res = agent.solve_task(
+            tp,
+            save_dir=args.save,
+            self_refine=not args.no_self_refine,
+            client=client,
+            skip_verilator=args.no_verilator_tool,
+        )
         results.append(res)
         print(json.dumps(res))
 

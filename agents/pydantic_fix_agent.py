@@ -80,7 +80,7 @@ def apply_patch_tool(original_code: str, fixed_code: str) -> str:
     return json.dumps({"fixed_code": fixed_code, "applied": True})
 
 
-def call_llm(client: OpenAIClient, system: str, prompt: str, original_code: str) -> tuple[str, bool]:
+def call_llm(client: OpenAIClient, system: str, prompt: str, original_code: str, skip_verilator: bool = False) -> tuple[str, bool]:
     """Call OpenAI with tool usage for both verification and patching."""
     timer = ProgressTimer()
     
@@ -89,8 +89,28 @@ def call_llm(client: OpenAIClient, system: str, prompt: str, original_code: str)
         {"role": "user", "content": prompt},
     ]
     
-    tools = [
-        {
+    # always allow apply_patch
+    apply_patch_tool = {
+        "type": "function",
+        "function": {
+            "name": "apply_patch",
+            "description": "Apply the fix by providing the complete corrected Verilog code",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "fixed_code": {
+                        "type": "string",
+                        "description": "The complete corrected Verilog code"
+                    }
+                },
+                "required": ["fixed_code"],
+            },
+        },
+    }
+
+    tools = [apply_patch_tool]
+    if not skip_verilator:
+        tools.insert(0, {
             "type": "function",
             "function": {
                 "name": "run_verilator",
@@ -101,25 +121,7 @@ def call_llm(client: OpenAIClient, system: str, prompt: str, original_code: str)
                     "required": ["code"],
                 },
             },
-        },
-        {
-            "type": "function",
-            "function": {
-                "name": "apply_patch",
-                "description": "Apply the fix by providing the complete corrected Verilog code",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "fixed_code": {
-                            "type": "string",
-                            "description": "The complete corrected Verilog code"
-                        }
-                    },
-                    "required": ["fixed_code"],
-                },
-            },
-        }
-    ]
+        })
 
     timer.start("Calling LLM for initial analysis")
     try:
@@ -214,6 +216,7 @@ def solve_task(
     self_refine: bool = True,
     max_rounds: int = 5,
     client: Optional[OpenAIClient] = None,
+    skip_verilator: bool = False,
 ) -> dict:
     task_dir = os.path.dirname(task_yaml)
     with open(task_yaml) as f:
@@ -235,16 +238,16 @@ def solve_task(
 
     system_prompt = """You are a seasoned Verilog engineer. Given a failing design and a compiler trace, fix the bug in the code.
 
-You have access to two tools:
-1. run_verilator: Test Verilog code for syntax/lint errors
-2. apply_patch: Provide the complete corrected Verilog code
+    You have access to two tools:
+    1. run_verilator: Test Verilog code for syntax/lint errors
+    2. apply_patch: Provide the complete corrected Verilog code
 
-Your workflow should be:
-1. Analyze the buggy code and error trace
-2. Optionally use run_verilator to test your understanding
-3. Use apply_patch to provide the complete fixed code
+    Your workflow should be:
+    1. Analyze the buggy code and error trace
+    2. Optionally use run_verilator to test your understanding
+    3. Use apply_patch to provide the complete fixed code
 
-Focus on providing clean, working Verilog code that addresses all the issues in the trace."""
+    Focus on providing clean, working Verilog code that addresses all the issues in the trace."""
 
     if client is None:
         raise ValueError("OpenAI client must be provided with a model name")
@@ -266,7 +269,13 @@ Focus on providing clean, working Verilog code that addresses all the issues in 
             user_prompt += f"\nThe above attempts failed. Please fix ALL the issues shown in the traces.\n"
             
         try:
-            new_src, tool_used = call_llm(client, system_prompt, user_prompt, current_src)
+            new_src, tool_used = call_llm(
+                client = client,
+                system = system_prompt,
+                prompt= user_prompt,
+                original_code=current_src,
+                skip_verilator=skip_verilator,
+            )
             
             # Test the fixed code
             print("Testing fixed code with Verilator...")
@@ -331,10 +340,17 @@ def main() -> None:
     parser.add_argument("--save", default=None, help="Directory to save trajectories")
     parser.add_argument("--no_self_refine", action="store_true")
     parser.add_argument("--model", required=True, help="OpenAI model name")
+    parser.add_argument("--no_verilator_tool", action="store_true", help="Disable the run_verilator tool ablation")
     args = parser.parse_args()
     client = OpenAIClient(model=args.model)
     for task in sorted(glob.glob(args.task_glob)):
-        result = solve_task(task, save_dir=args.save, self_refine=not args.no_self_refine, client=client)
+        result = solve_task(
+            task,
+            save_dir=args.save,
+            self_refine=not args.no_self_refine,
+            client=client,
+            skip_verilator=args.no_verilator_tool,
+        )
         print(json.dumps(result))
 
 
