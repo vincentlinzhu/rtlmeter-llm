@@ -1,6 +1,7 @@
 rtlmeter
 verilator
 tasks
+history
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
