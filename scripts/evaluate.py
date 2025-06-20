@@ -21,6 +21,7 @@ def main():
     parser.add_argument("--agent", required=True, help="Path to agent python file")
     parser.add_argument("--tasks", required=True, help="Directory of tasks")
     parser.add_argument("--out", required=True)
+    parser.add_argument("--save", default=None, help="Directory to save trajectories")
     parser.add_argument("--no_self_refine", action="store_true")
     parser.add_argument("--model", required=True, help="OpenAI model name")
     args = parser.parse_args()
@@ -31,7 +32,7 @@ def main():
     results = []
     for tp in tqdm(task_paths, desc="Solving tasks", unit="task"):
         client = agent.OpenAIClient(model=args.model)
-        res = agent.solve_task(tp, self_refine=not args.no_self_refine, client=client)
+        res = agent.solve_task(tp, save_dir=args.save, self_refine=not args.no_self_refine, client=client)
         results.append(res)
         print(json.dumps(res))
 

@@ -219,8 +219,8 @@ python agents/pydantic_fix_agent.py \
 ### 4.2 Run full evaluation + ablations
 
 ```bash
-python evaluate.py --agent agents/pydantic_fix_agent.py --tasks tasks --out results.json --model gpt-4o-mini
-python evaluate.py --agent agents/pydantic_fix_agent.py --tasks tasks --out results_toolonly.json --no_self_refine --model gpt-4o-mini
+python scripts/evaluate.py --agent agents/pydantic_fix_agent.py --tasks tasks --out results.json --model gpt-4o-mini
+python scripts/evaluate.py --agent agents/pydantic_fix_agent.py --tasks tasks --out results_toolonly.json --no_self_refine --model gpt-4o-mini
 ```
 
 The second command disables the self-refinement loop via `--no_self_refine`.
