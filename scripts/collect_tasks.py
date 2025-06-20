@@ -1,7 +1,6 @@
 import argparse
 import os
 import random
-import shutil
 import subprocess
 import yaml
 
@@ -40,7 +39,10 @@ def collect_tasks(design_roots, num_tasks, out_dir):
             f.write(src)
         trace_file = os.path.join(tdir, "trace.log")
         try:
-            proc = subprocess.run(["verilator", "--lint-only", bug_path], capture_output=True, text=True)
+            verilator_cmd = ["verilator", "--lint-only", bug_path]
+            for root in design_roots:
+                verilator_cmd += ["-y", root, "-I", root]
+            proc = subprocess.run(verilator_cmd, capture_output=True, text=True)
             with open(trace_file, "w") as log:
                 log.write(proc.stdout + proc.stderr)
         except FileNotFoundError:
