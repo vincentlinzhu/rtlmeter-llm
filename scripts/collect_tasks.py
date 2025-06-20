@@ -3,16 +3,68 @@ import os
 import random
 import subprocess
 import yaml
+import re
 
+# --- new helper transforms --------------------------------------------------
+def drop_first(char: str, src: str) -> str:
+    """Remove the first occurrence of *char* (useful for ';', ')', ']' …)."""
+    return src.replace(char, "", 1)
+
+def flip_first(a: str, b: str, src: str) -> str:
+    """Swap operator *a* for *b* (e.g. '==' -> '!=', '&&' -> '||')."""
+    return src.replace(a, b, 1)
+
+def misspell_first(word: str, wrong: str, src: str) -> str:
+    """Change the first exact keyword *word* to the faulty spelling *wrong*."""
+    return re.sub(rf"\b{word}\b", wrong, src, count=1)
+
+# --- master list of possible bug generators ---------------------------------
+BUG_TRANSFORMS = [
+    #  syntax deletions
+    lambda s: drop_first(";", s),                     # remove semicolon
+    lambda s: drop_first(")", s),                     # drop closing paren
+    #  operator flips
+    lambda s: flip_first("==", "!=", s),
+    lambda s: flip_first("&&", "||", s),
+    lambda s: flip_first("<",  ">",  s),
+    #  literal tweaks
+    lambda s: flip_first("1'b0", "1'b1", s),
+    lambda s: flip_first("0", "1", s),                # first decimal 0 → 1
+    #  clock-edge reversal
+    lambda s: s.replace("posedge", "negedge", 1),
+    #  keyword misspellings
+    lambda s: misspell_first("module",   "modul",    s),
+    lambda s: misspell_first("endmodule","endmodul", s),
+    lambda s: misspell_first("begin",    "begn",     s),
+    lambda s: misspell_first("end",      "en",       s),
+]
 
 def inject_bug(src: str) -> str:
-    if ";" in src:
-        return src.replace(";", "", 1)
-    if "==" in src:
-        return src.replace("==", "!=", 1)
-    if "0" in src:
-        return src.replace("0", "1", 1)
-    return src + "\n// BUG"
+    """
+    Inject a single random bug into *src*.
+
+    The function scans the candidate transforms above and keeps only those that
+    are applicable to the current source (i.e. their trigger string is present).
+    One applicable transform is chosen uniformly at random and applied.
+    If, for some reason, none match, we append a dummy comment.
+    """
+    # Figure out which transforms can actually fire on this file
+    applicable = [t for t in BUG_TRANSFORMS if t.__code__.co_consts[1] in src]
+    if not applicable:          # nothing found? fall back
+        return src + "\n// BUG"
+
+    transform = random.choice(applicable)
+    return transform(src)
+
+
+# def inject_bug(src: str) -> str:
+#     if ";" in src:
+#         return src.replace(";", "", 1)
+#     if "==" in src:
+#         return src.replace("==", "!=", 1)
+#     if "0" in src:
+#         return src.replace("0", "1", 1)
+#     return src + "\n// BUG"
 
 
 def collect_tasks(design_roots, num_tasks, out_dir):
@@ -41,9 +93,7 @@ def collect_tasks(design_roots, num_tasks, out_dir):
             f.write(src)
         trace_file = os.path.join(tdir, "trace.log")
         try:
-            verilator_cmd = ["verilator", "--lint-only", bug_path]
-            # verilator_cmd += ["-y", design_roots[0], "-I", design_roots[0]]
-            proc = subprocess.run(verilator_cmd, capture_output=True, text=True)
+            proc = subprocess.run(["verilator", "--lint-only", bug_path], capture_output=True, text=True)
             with open(trace_file, "w") as log:
                 log.write(proc.stdout + proc.stderr)
         except FileNotFoundError:

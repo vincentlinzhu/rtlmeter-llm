@@ -12,7 +12,7 @@
         //     "program": "scripts/collect_tasks.py",
         //     "console": "integratedTerminal",
         //     "args": "--design_roots rtlmeter/designs/OpenTitan/src --num_tasks 1 --output tasks"
-        // },
+        // }
         {
             "name": "Python Debugger: Current File with Arguments",
             "type": "debugpy",
