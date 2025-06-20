@@ -5,13 +5,21 @@
     "version": "0.2.0",
     "configurations": [
 
+        // {
+        //     "name": "Python Debugger: Current File with Arguments",
+        //     "type": "debugpy",
+        //     "request": "launch",
+        //     "program": "scripts/collect_tasks.py",
+        //     "console": "integratedTerminal",
+        //     "args": "--design_roots rtlmeter/designs/OpenTitan/src --num_tasks 20 --output tasks"
+        // },
         {
             "name": "Python Debugger: Current File with Arguments",
             "type": "debugpy",
             "request": "launch",
-            "program": "scripts/collect_tasks.py",
+            "program": "scripts/evaluate.py",
             "console": "integratedTerminal",
-            "args": "--design_roots rtlmeter/designs/OpenTitan/src --num_tasks 20 --output tasks"
+            "args": "--agent agents/pydantic_fix_agent.py --tasks tasks/ --out results.json"
         }
     ]
 }
