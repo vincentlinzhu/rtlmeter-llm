@@ -119,7 +119,7 @@ def create_benchmark_plots(df, figsize=(15, 6)):
     
     ax1.set_xlabel('Model', fontweight='bold')
     ax1.set_ylabel('Performance (%)\nOut of 20 tasks', fontweight='bold')
-    ax1.set_title('Benchmark\nSuccess %', fontweight='bold', fontsize=14)
+    ax1.set_title('Benchmark Success %', fontweight='bold', fontsize=14)
     ax1.set_xticks(x_pos + width)  # Center the labels
     ax1.set_xticklabels(models)
     ax1.legend(frameon=True, fancybox=True, shadow=True, facecolor='#F5F5F5')
@@ -155,7 +155,7 @@ def create_benchmark_plots(df, figsize=(15, 6)):
     
     ax2.set_xlabel('Model', fontweight='bold')
     ax2.set_ylabel('Avg Time (s)\nof 20 tasks', fontweight='bold')
-    ax2.set_title('Benchmark Avg\nTime', fontweight='bold', fontsize=14)
+    ax2.set_title('Benchmark Avg Time', fontweight='bold', fontsize=14)
     ax2.set_xticks(x_pos + width)  # Center the labels
     ax2.set_xticklabels(models)
     ax2.legend(frameon=True, fancybox=True, shadow=True, facecolor='#F5F5F5')
