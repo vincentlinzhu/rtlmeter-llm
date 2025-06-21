@@ -78,41 +78,6 @@ but they leave more bugs unsolved.
 | 18 | 66.84 | 19.57 | 42.57 | 86.09 | 82.58 | 80.08 | 114.82 | 88.81 | 12.06 |
 | 19 | 21.07 | 20.62 | 15.57 | 35.07 | 52.57 | 42.57 | 26.12 | 7.06 | 11.56 |
 
-## Choose a Task
-
-| Candidate task                                                                                          | Pros                                                                                                                                                                                                                                                            | Cons / hidden cost                                                                        |
-| ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| **A. Trace-to-Code Bug Fixing** (feed a failing Verilator trace + buggy Verilog; model outputs a patch) | \* Binary success metric\* (design passes after patch) — easy scoring<br>\* Small diff size → compact prompts and responses<br>\* You can script dataset creation: randomly mutate one line, re-run RTLMeter until it fails, store the failing trace + bug file | Needs a robust mutation script to guarantee “single-edit” bugs                            |
-| B. **Specification → Code Synthesis** (generate an entire module from natural-language spec)            | Flashy; shows LLM creativity                                                                                                                                                                                                                                    | Hard to grade automatically (need formal spec or hand-written tests for each of 20 cases) |
-| C. **Testbench Generation** (given RTL, generate a test that hits coverage)                             | Good for hardware focus                                                                                                                                                                                                                                         | Requires coverage tooling (gcc + Verilator coverage, LCOV parsing, etc.) — more infra     |
-| D. **Bug-Localization Only** (identify line/region of bug, no patch)                                    | Easy patches not required                                                                                                                                                                                                                                       | Less impressive; still needs ground-truth labels                                          |
-| E. **Lint-Fix or Style-Fix** (convert non-compliant code to standard style)                             | Simple pass/fail via lint tool                                                                                                                                                                                                                                  | Lower technical depth; easier to “cheat” with regex models                                |
-
-
-
-Why it fits this take-home:
-
-1. Scorable with a single command. After the model proposes a patch you just run
-
-```bash
-verilator --cc ... && c++ && ./sim
-or RTLMeter. Pass = 1, fail = 0 — easy leaderboard.
-```
-
-2. Dataset can be auto-generated. A 50-line Python script can:
-
-    - pick a clean design,
-
-    - mutate one ==→!=, +→-, flip a wire width, etc.,
-
-    - save the failing trace & diff only if the original still passed.
-
-3. 20 cases is realistic. Each compile-and-sim loop is < 1 min with small designs (picorv32, amber23).
-
-4. Uses the user’s Verilog + debugging skills. Aligns with what the company cares about (hardware tool flow) and shows LLM+tool orchestration.
-
-5. Room for agent creativity. You can baseline with a simple “single-edit-search” agent, then show ablations (self-refine, error-chain-of-thought).
-
 
 ## Why the Agent Succeeds or Fails
 

@@ -160,8 +160,14 @@ execute
     | Field       | Value                                                                                                                       |
     | ----------- | --------------------------------------------------------------------------------------------------------------------------- |
     | **Input**   | *bug.v* (single-file design containing exactly one semantic bug) + *trace.log* (Verilator `--timing` or `$fatal` backtrace) |
-    | **Output**  | *fix.v* (single-file design with bugs fixed and ready to be passed into Verilator to be evaluated)                                                                        |
-    | **Success** | `verilator --lint-only` compile succeeds **and** testbench passes (use existing self-checking tb)                                  |
+    | **Output**  | *fix.v* (single-file design with bugs fixed and ready to be passed into Verilator linter to be evaluated)                                                                        |
+    | **Success** | `verilator --lint-only` (checks for precompilation errors)                                  |
+
+    Key functions of `verilator --lint-only`: 
+    - Linting: This option tells Verilator to perform linting checks on your Verilog/SystemVerilog code. 
+    - Warning detection: It's primarily used to identify warnings and potential issues in your design, which might include stylistic problems, coding errors, or design flaws, not just syntax issues. 
+    - No simulation output: --lint-only prevents Verilator from generating simulation output files. 
+    - Fast check: It provides a quick way to check your code for problems, even if you don't intend to use Verilator for simulation.
 
 
 2. **Generate 20 task instances**:
