@@ -2,6 +2,8 @@
 
 This repository sets up a testing environment for various verilog and system verilog files from RTL Meter. The overall task that can be setup in this repo is defined below in section 3. The main idea is to generate a set of instance of a task (trace to fixed code) from the RTL Meter benchmark. Then, we can evaluate various models and tools on the newly collected benchmark that the repository automatically creates. 
 
+![System diagram](plots/System_Diagram.png)
+
 ---
 
 ## Table of Contents

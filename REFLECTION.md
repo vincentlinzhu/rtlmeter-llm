@@ -11,6 +11,8 @@ model:
 
 Each configuration attempts all 20 tasks.
 
+![Benchmark results](plots/benchmark_results.png)
+
 ## Benchmark Results
 
 | Model           | Config        | Success Rate | Avg Time (s) |
