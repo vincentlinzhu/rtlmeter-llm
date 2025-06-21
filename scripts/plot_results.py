@@ -122,7 +122,7 @@ def create_benchmark_plots(df, figsize=(15, 6)):
     ax1.set_title('Benchmark Success %', fontweight='bold', fontsize=14)
     ax1.set_xticks(x_pos + width)  # Center the labels
     ax1.set_xticklabels(models)
-    ax1.legend(frameon=True, fancybox=True, shadow=True, facecolor='#F5F5F5')
+    # ax1.legend(frameon=True, fancybox=True, shadow=True, facecolor='#F5F5F5')
     ax1.grid(True, alpha=0.3, color='#666666')  # Gray grid
     ax1.set_ylim(0, 110)  # Increased to accommodate labels
     ax1.set_facecolor('#FAFAFA')  # Light gray background
