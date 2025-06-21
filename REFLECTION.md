@@ -33,6 +33,39 @@ the tool reduces accuracy, most noticeably for gpt‑4.1‑nano where success dr
 from 80% to 55% without refinement. Runs without iterative loops finish faster,
 but they leave more bugs unsolved.
 
+
+## Why the Agent Succeeds or Fails
+
+The agent succeeds when it can view compile errors and apply multiple fixes. It
+fails on multi‑step issues or uncommon constructs that exceed the model's context
+or training. Larger models or extended context windows could help.
+
+## Scaling Up Inference
+
+Increasing the tool‑call budget or running inference on GPUs shortens overall
+runtime. Batching several tasks hides latency when evaluating larger datasets.
+
+## Training a Better Base Model
+
+Domain‑adaptive pretraining on public HDL repositories and synthesis logs would
+teach the model more Verilog patterns. This improves understanding before any
+supervised fine‑tuning.
+
+## Collecting Training Data
+
+Open‑source projects such as OpenROAD or chipyard contain rich histories of bug
+fixes. Mining their diffs produces paired examples of errors and corrections.
+Synthetic data can be created by intentionally corrupting designs and recording
+how they are fixed.
+
+## Involving Human Annotators
+
+A review loop with hardware engineers lets humans grade patches and create small
+reproducers. Their feedback expands the dataset with high‑quality
+examples and reduces noise in automatically mined diffs.
+
+## Appendix Tables
+
 | Task # | 3.5-Turbo refine+tool | 3.5-Turbo refine only | 3.5-Turbo tool only | 4o-mini refine+tool | 4o-mini refine only | 4o-mini tool only | 4.1-nano refine+tool | 4.1-nano refine only | 4.1-nano tool only |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 00 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
@@ -79,34 +112,3 @@ but they leave more bugs unsolved.
 | 17 | 35.82 | 5.06 | 5.56 | 16.57 | 21.07 | 21.07 | 5.56 | 2.56 | 5.06 |
 | 18 | 66.84 | 19.57 | 42.57 | 86.09 | 82.58 | 80.08 | 114.82 | 88.81 | 12.06 |
 | 19 | 21.07 | 20.62 | 15.57 | 35.07 | 52.57 | 42.57 | 26.12 | 7.06 | 11.56 |
-
-
-## Why the Agent Succeeds or Fails
-
-The agent succeeds when it can view compile errors and apply multiple fixes. It
-fails on multi‑step issues or uncommon constructs that exceed the model's context
-or training. Larger models or extended context windows could help.
-
-## Scaling Up Inference
-
-Increasing the tool‑call budget or running inference on GPUs shortens overall
-runtime. Batching several tasks hides latency when evaluating larger datasets.
-
-## Training a Better Base Model
-
-Domain‑adaptive pretraining on public HDL repositories and synthesis logs would
-teach the model more Verilog patterns. This improves understanding before any
-supervised fine‑tuning.
-
-## Collecting Training Data
-
-Open‑source projects such as OpenROAD or chipyard contain rich histories of bug
-fixes. Mining their diffs produces paired examples of errors and corrections.
-Synthetic data can be created by intentionally corrupting designs and recording
-how they are fixed.
-
-## Involving Human Annotators
-
-A review loop with hardware engineers lets humans grade patches and create small
-reproducers. Their feedback expands the dataset with high‑quality
-examples and reduces noise in automatically mined diffs.
