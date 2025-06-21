@@ -1,10 +1,46 @@
-# rtlmeter-llm
+# RTLMeter-LLM
 
-Follow the copy‑paste‑ready commands below; they assume a fresh VM with sudo access.
+This repository sets up a testing environment for various verilog and system verilog files from RTL Meter. The overall task that can be setup in this repo is defined below in section 3. The main idea is to generate a set of instance of a task (trace to fixed code) from the RTL Meter benchmark. Then, we can evaluate various models and tools on the newly collected benchmark that the repository automatically creates. 
 
 ---
 
-## 0  TL;DR (10‑line Quick‑Start — Ubuntu 24.04)
+## Table of Contents
+
+1. [Project Layout](#project-layout)  
+2. [10 Line Quick Start](#10-line-quick-start)  
+3. [Environment Setup](#environment-setup)  
+4. [Benchmark Creation](#benchmark-creation)  
+5. [Agent Design & Evaluation](#agent-design--evaluation)  
+6. [Useful Resources](#useful-resources)
+
+---
+
+## Project Layout
+
+```
+rtlmeter-llm/
+├── README.md                 ← (this file)
+├── verilator/                ← cloned, built, installed
+├── rtlmeter/                 ← Original source benchmark to collect tasks from
+├── results/                  ← JSON results of each configuration evaluation run
+├── plots/                    ← Stored result plots
+├── agents/
+│   └── pydantic_fix_agent.py ← Agent and OpenAI LLM code. Main solve loop here
+├── configs/
+│   └── OpenTitan             ← Contains the 9 configurations for the evaluations
+├── scripts/
+│   ├── collect_tasks.py      ← Generates 20 tasks by injecting bugs into 20 system verilog files
+│   ├── evaluate.py           ← Handles args for evaluation loop of all 20 tasks
+│   ├── plot_results.py       ← Generates plots of the results in the output files
+│   ├── run_evals.sh          ← runs all evaluations in parallel in the background
+│   └── sanity_check_tasks.py ← Checks if the extracted tasks can be validated by verilator (w/o bugs yet)
+├── tasks/                    ← 20 auto‑generated bug‑fix tasks; each contains a bug.sv and a trace.log file
+└── trajectories/             ← JSONL debug traces
+```
+
+---
+
+## 10 Line Quick Start
 
 ```bash
 # 1. Clone repos
@@ -23,28 +59,15 @@ cd verilator && git checkout stable && autoconf && ./configure && \
 
 # 4. Python env + RTLMeter deps
 python3 -m venv .venv && source .venv/bin/activate
-pip install -U pip && pip install -r rtlmeter/requirements.txt openai langchain[all] pandas jinja2 rich
+pip install -U pip && pip install -r rtlmeter/requirements.txt
 
 ```
 
 ---
 
-## 1  Prerequisites
+## Environment Setup
 
-| Tool               | Version tested (June 2025)         | Install notes                           |
-| ------------------ | ---------------------------------- | --------------------------------------- |
-| **Python**         | ≥ 3.10 (Ubuntu ships 3.12)         | `sudo apt install python3 python3-venv` |
-| **GCC / Clang**    | ≥ 13 (Ubuntu 24.04 default GCC‑14) | part of `build-essential`               |
-| **Git**            | latest                             | `sudo apt install git`                  |
-| **Verilator**      | 5.026‑dev (`stable` tag)           | built from source (§2.2)                |
-| **RTLMeter**       | `master` (June 2025)               | cloned from GitHub                      |
-| **OpenAI API key** | env var `OPENAI_API_KEY`           | required for agent evaluation           |
-
----
-
-## 2  Environment Setup (Ubuntu 24.04)
-
-### 2.1 System packages
+### System packages
 
 ```bash
 sudo apt update && sudo apt install -y git make autoconf g++ flex bison \
@@ -54,7 +77,7 @@ sudo apt update && sudo apt install -y git make autoconf g++ flex bison \
 > **Tip** Ubuntu 24.04 ships GCC‑14; Verilator compiles cleanly. If you prefer Clang:
 > `sudo apt install clang` and add `CXX=clang++` before `./configure`.
 
-### 2.2 Build & install Verilator from Git
+### Build & install Verilator from Git
 
 ```bash
 cd verilator
@@ -72,7 +95,7 @@ which verilator && verilator --version
 cd ..
 ```
 
-### 2.3 Python virtual environment & RTLMeter
+### Python virtual environment & RTLMeter
 
 ```bash
 python3 -m venv .venv
@@ -83,7 +106,7 @@ pip install -r rtlmeter/requirements.txt
 
 *(adds pyverilator, pytest, etc.  You’ll install LLM deps in §3.)*
 
-### 2.4 Sanity‑check installation
+### Sanity‑check installation
 
 ```bash
 cd rtlmeter
@@ -128,43 +151,8 @@ execute
 
 ---
 
-## 3  Benchmark Creation (Part 1)
+## Benchmark Creation
 
-| Candidate task                                                                                          | Pros                                                                                                                                                                                                                                                            | Cons / hidden cost                                                                        |
-| ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| **A. Trace-to-Code Bug Fixing** (feed a failing Verilator trace + buggy Verilog; model outputs a patch) | \* Binary success metric\* (design passes after patch) — easy scoring<br>\* Small diff size → compact prompts and responses<br>\* You can script dataset creation: randomly mutate one line, re-run RTLMeter until it fails, store the failing trace + bug file | Needs a robust mutation script to guarantee “single-edit” bugs                            |
-| B. **Specification → Code Synthesis** (generate an entire module from natural-language spec)            | Flashy; shows LLM creativity                                                                                                                                                                                                                                    | Hard to grade automatically (need formal spec or hand-written tests for each of 20 cases) |
-| C. **Testbench Generation** (given RTL, generate a test that hits coverage)                             | Good for hardware focus                                                                                                                                                                                                                                         | Requires coverage tooling (gcc + Verilator coverage, LCOV parsing, etc.) — more infra     |
-| D. **Bug-Localization Only** (identify line/region of bug, no patch)                                    | Easy patches not required                                                                                                                                                                                                                                       | Less impressive; still needs ground-truth labels                                          |
-| E. **Lint-Fix or Style-Fix** (convert non-compliant code to standard style)                             | Simple pass/fail via lint tool                                                                                                                                                                                                                                  | Lower technical depth; easier to “cheat” with regex models                                |
-
-
-
-Why it fits this take-home:
-
-1. Scorable with a single command. After the model proposes a patch you just run
-
-```bash
-verilator --cc ... && c++ && ./sim
-or RTLMeter. Pass = 1, fail = 0 — easy leaderboard.
-```
-
-2. Dataset can be auto-generated. A 50-line Python script can:
-
-    - pick a clean design,
-
-    - mutate one ==→!=, +→-, flip a wire width, etc.,
-
-    - save the failing trace & diff only if the original still passed.
-
-3. 20 cases is realistic. Each compile-and-sim loop is < 1 min with small designs (picorv32, amber23).
-
-4. Uses the user’s Verilog + debugging skills. Aligns with what the company cares about (hardware tool flow) and shows LLM+tool orchestration.
-
-5. Room for agent creativity. You can baseline with a simple “single-edit-search” agent, then show ablations (self-refine, error-chain-of-thought).
-
-
-PART 1 Explanation:
 1. **Define the Task** — *Trace‑to‑Code Bug‑Fixing*.
   
     Concrete Definition:
@@ -193,30 +181,18 @@ PART 1 Explanation:
 4. **Evaluation harness**:
 
    ```bash
-   python scripts/evaluate.py --agent agents/pydantic_fix_agent.py \
-     --tasks tasks/ --out results.json --model gpt-4o-mini
+   python scripts/evaluate.py --config configs/OpenTitan/gpt4o_mini_refine_tool.json
    ```
 
 ---
 
-## 4  Agent Design & Evaluation (Part 2)
+## Agent Design & Evaluation
 
-### 4.1 Reference agent
+### Design
 
-Suggested agent baseline:
 
-- Prompt = system spec + failing trace + bug.v snippet.
 
-- Ask model to “produce a unified diff patch with exactly one hunk”.
-
-- Apply with patch -p0, re-run; if still failing, give it the new trace and let it try up to 3 rounds.
-
-```bash
-python agents/pydantic_fix_agent.py \
-  --task_glob tasks/*/README.yaml --save trajectories/ --model gpt-4o-mini
-```
-
-### 4.2 Run full evaluation + ablations
+### Run full evaluation + ablations
 
 ```bash
 python scripts/evaluate.py --agent agents/pydantic_fix_agent.py --tasks tasks --out results.json --model gpt-4o-mini
@@ -229,46 +205,7 @@ measure how much iterative patch refinement improves task success.
 
 ---
 
-## 5  Reflection Prompts (Part 3)
-
-Create `REFLECTION.md` or a slide deck covering:
-
-* Why the agent succeeds/fails
-* Scaling (model size, context window, tool call budget)
-* Potential training data for Verilog bug‑fixing (e.g. OpenROAD diffs)
-* Human‑in‑the‑loop strategy for >B difficulty
-
----
-
-## 6  Project Layout
-
-```
-rtlmeter-llm/
-├── README.md            ← (this file)
-├── verilator/           ← cloned, built, installed
-├── rtlmeter/            ← …
-├── tasks/               ← 20 auto‑generated bug‑fix tasks
-├── agents/
-│   └── pydantic_fix_agent.py
-├── scripts/
-│   ├── collect_tasks.py
-│   └── evaluate.py
-└── trajectories/        ← JSONL debug traces
-```
-
----
-
-## 7  Uninstall / Cleanup
-
-```bash
-sudo rm -rf /usr/local/bin/verilator* /usr/local/share/verilator
-rm -rf .venv verilator rtlmeter tasks trajectories
-```
-
----
-
-### Useful Resources
+## Useful Resources
 
 * Verilator install guide: [https://verilator.org/guide/latest/install.html](https://verilator.org/guide/latest/install.html)
 * RTLMeter repo: [https://github.com/verilator/rtlmeter](https://github.com/verilator/rtlmeter)
-* LangChain docs: [https://python.langchain.com](https://python.langchain.com)
