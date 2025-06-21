@@ -135,8 +135,10 @@ def call_llm(client: OpenAIClient, system: str, prompt: str, original_code: str,
     tool_used = False
     tool_call_count = 0
 
+    interactions = 0
     # Handle tool calls in a loop until no more tool calls
     while hasattr(message, "tool_calls") and message.tool_calls:
+        interactions += 1
         messages.append({
             "role": "assistant", 
             "content": message.content,
@@ -145,6 +147,8 @@ def call_llm(client: OpenAIClient, system: str, prompt: str, original_code: str,
         
         for call in message.tool_calls:
             tool_call_count += 1
+            
+            print(f"ROUND {interactions} : {call.function.name}")
             
             if call.function.name == "run_verilator":
                 print(f"Tool call {tool_call_count}: Running Verilator verification...")
@@ -184,6 +188,8 @@ def call_llm(client: OpenAIClient, system: str, prompt: str, original_code: str,
             finally:
                 timer.stop()
             message = resp.choices[0].message
+            
+    print("INTEACTIONS: ", interactions)
 
     # If no patch tool was called, try to extract code from the response
     if fixed_code is None and message.content:
@@ -246,6 +252,8 @@ def solve_task(
     1. Analyze the buggy code and error trace
     2. Optionally use run_verilator to test your understanding
     3. Use apply_patch to provide the complete fixed code
+    4. Then check the patch with the run_verilator tool again
+    5. Repeat this workflow until the response passed the run_verilator tool call.
 
     Focus on providing clean, working Verilog code that addresses all the issues in the trace."""
 
@@ -259,7 +267,7 @@ def solve_task(
     for round_idx in range(1, max_rounds + 1):
         print(f"\n=== Round {round_idx}/{max_rounds} ===")
         user_prompt = f"BUGGY FILE:\n{current_src}\n\nTRACE:\n{current_trace}\n"
-        
+                            
         if round_idx > 1:
             user_prompt += f"\nPREVIOUS ATTEMPTS:\n"
             for i, h in enumerate(history, 1):
@@ -267,7 +275,7 @@ def solve_task(
                 if not h['success'] and 'stderr' in h:
                     user_prompt += f"Error: {h['stderr']}\n"
             user_prompt += f"\nThe above attempts failed. Please fix ALL the issues shown in the traces.\n"
-            
+
         try:
             new_src, tool_used = call_llm(
                 client,
@@ -307,14 +315,14 @@ def solve_task(
         else:
             print(f"❌ Round {round_idx} failed with errors:")
             print(stderr)
-            
+               
             if self_refine:
                 # Update src and trace for next iteration
                 current_src = new_src
                 current_trace = stderr  # Use the new error as the trace for next round
             else:
                 break
-    
+            
     # Save the history
     if save_dir:
         os.makedirs(save_dir, exist_ok=True)
