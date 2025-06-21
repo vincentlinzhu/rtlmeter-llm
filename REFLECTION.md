@@ -40,7 +40,7 @@ Viewing compile errors and applying multiple fixes: The agent parses Verilator�
 
 Failing on multi-step issues or uncommon constructs: Complex bugs often involve a sequence of dependent edits (e.g., add an interface signal, adjust a state machine, then update a bus arbitration logic) or rare HDL idioms not seen during the model’s pretraining. If the required sequence exceeds its context window or training examples, the agent loses track of earlier edits or misinterprets the fix order. Why it hurts: Without long-range reasoning over many interdependent changes, the agent can get “stuck” after a few iterations, re-introduce old errors, or fix the wrong part of the design. Coverage gaps in the model’s HDL knowledge exacerbate this, leading to abandoned multi-step repairs.
 
-Mitigation via larger models or extended context windows: Upgrading to an LLM with more parameters or a 64K-token context window lets you pack more of the Verilog source, error logs, and past patch history into each prompt.A bigger model can better generalize to unseen patterns, while a larger context lets the agent remember the entire edit history—both critical for orchestrating multi-step bug fixes.
+Mitigation via larger models or extended context windows: Upgrading to an LLM with more parameters or a 64K-token context window lets you pack more of the Verilog source, error logs, and past patch history into each prompt. A bigger model can better generalize to unseen patterns, while a larger context lets the agent remember the entire edit history—both critical for orchestrating multi-step bug fixes.
 
 ## Scaling Up Inference
 
