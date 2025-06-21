@@ -194,14 +194,12 @@ execute
 
 ### Run full evaluation + ablations
 
-```bash
-python scripts/evaluate.py --agent agents/pydantic_fix_agent.py --tasks tasks --out results.json --model gpt-4o-mini
-python scripts/evaluate.py --agent agents/pydantic_fix_agent.py --tasks tasks --save history_ablation --out results_toolonly.json --no_self_refine --model gpt-4o-mini
-```
+This will run all configurations in the background and log the stdout to log files. 
 
-The second command disables the self-refinement loop via `--no_self_refine`.
-By comparing `results_toolonly.json` with the baseline `results.json`, you can
-measure how much iterative patch refinement improves task success.
+```bash
+chmod +x scripts/run_evals.sh
+./scripts/run_evals.sh
+```
 
 ---
 
