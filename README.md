@@ -160,8 +160,8 @@ execute
     | Field       | Value                                                                                                                       |
     | ----------- | --------------------------------------------------------------------------------------------------------------------------- |
     | **Input**   | *bug.v* (single-file design containing exactly one semantic bug) + *trace.log* (Verilator `--timing` or `$fatal` backtrace) |
-    | **Output**  | *patch.diff* (unified diff **or** full fixed source)                                                                        |
-    | **Success** | `verilator --cc` compile succeeds **and** testbench passes (use existing self-checking tb)                                  |
+    | **Output**  | *fix.v* (single-file design with bugs fixed and ready to be passed into Verilator to be evaluated)                                                                        |
+    | **Success** | `verilator --lint-only` compile succeeds **and** testbench passes (use existing self-checking tb)                                  |
 
 
 2. **Generate 20 task instances**:
@@ -178,7 +178,7 @@ execute
    python scripts/sanity_check_tasks.py tasks
    ```
 
-4. **Evaluation harness**:
+4. **Evaluation Harness Example**:
 
    ```bash
    python scripts/evaluate.py --config configs/OpenTitan/gpt4o_mini_refine_tool.json
@@ -190,7 +190,22 @@ execute
 
 ### Design
 
+The patch-generation agent is implemented in
+[`agents/pydantic_fix_agent.py`](agents/pydantic_fix_agent.py). It wraps
+OpenAI ChatCompletion and exposes Verilator verification as a tool.
 
+* **LLM tools**
+  - `run_verilator` runs `verilator --lint-only` on candidate code.
+  - `apply_patch` returns the complete fixed source.
+
+* **Self-refinement loop**
+  1. Submit the buggy file and trace to the model.
+  2. Process tool calls and re-test the result.
+  3. Repeat with the new error trace until Verilator passes.
+
+* **CLI toggles**
+  - `--no_self_refine` stops after one round ("tool only").
+  - `--no_verilator_tool` disables verification for a "refine only" run.
 
 ### Run full evaluation + ablations
 
