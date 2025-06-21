@@ -1,0 +1,148 @@
+{
+  "model": "gpt-4o-mini",
+  "no_self_refine": false,
+  "no_verilator_tool": true,
+  "average_time_s": 78.56912714242935,
+  "results": [
+    {
+      "task": "task_00",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 21.06676983833313
+    },
+    {
+      "task": "task_01",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 7.561706304550171
+    },
+    {
+      "task": "task_02",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 34.067782402038574
+    },
+    {
+      "task": "task_03",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 11.561808347702026
+    },
+    {
+      "task": "task_04",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 12.062050104141235
+    },
+    {
+      "task": "task_05",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 36.069361448287964
+    },
+    {
+      "task": "task_06",
+      "success": true,
+      "attempts": 3,
+      "final_stderr": "",
+      "time_s": 158.72482895851135
+    },
+    {
+      "task": "task_07",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 24.065349102020264
+    },
+    {
+      "task": "task_08",
+      "success": false,
+      "attempts": 5,
+      "final_stderr": "Exception during LLM call: 'fixed_code'",
+      "time_s": 772.7955963611603
+    },
+    {
+      "task": "task_09",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 9.062138080596924
+    },
+    {
+      "task": "task_10",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 33.06960678100586
+    },
+    {
+      "task": "task_11",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 45.57421016693115
+    },
+    {
+      "task": "task_12",
+      "success": false,
+      "attempts": 5,
+      "final_stderr": "%Error: No top level module found\n%Error: Exiting due to 1 error(s)\n",
+      "time_s": 152.71496057510376
+    },
+    {
+      "task": "task_13",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 18.561304092407227
+    },
+    {
+      "task": "task_14",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 38.07127618789673
+    },
+    {
+      "task": "task_15",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 19.06448984146118
+    },
+    {
+      "task": "task_16",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 21.065062999725342
+    },
+    {
+      "task": "task_17",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 21.065126180648804
+    },
+    {
+      "task": "task_18",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 82.58491253852844
+    },
+    {
+      "task": "task_19",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 52.57420253753662
+    }
+  ]
+}

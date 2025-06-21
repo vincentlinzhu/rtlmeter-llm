@@ -1,0 +1,148 @@
+{
+  "model": "gpt-4.1-nano",
+  "no_self_refine": false,
+  "no_verilator_tool": true,
+  "average_time_s": 16.29553966522217,
+  "results": [
+    {
+      "task": "task_00",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 5.562374591827393
+    },
+    {
+      "task": "task_01",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 2.060006856918335
+    },
+    {
+      "task": "task_02",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 9.062556028366089
+    },
+    {
+      "task": "task_03",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 5.561128854751587
+    },
+    {
+      "task": "task_04",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 2.5586931705474854
+    },
+    {
+      "task": "task_05",
+      "success": false,
+      "attempts": 5,
+      "final_stderr": "%Error: /tmp/tmpo7xs5zob.v:63:1: syntax error, unexpected end\n   63 | end\n      | ^~~\n%Error: Cannot continue\n",
+      "time_s": 42.796701192855835
+    },
+    {
+      "task": "task_06",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 14.565284013748169
+    },
+    {
+      "task": "task_07",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 6.561344385147095
+    },
+    {
+      "task": "task_08",
+      "success": false,
+      "attempts": 5,
+      "final_stderr": "%Error: /tmp/tmppsdjvix_.v:33:15: Number is missing value digits: 64'h\n   33 |     mem[2]  = 64'hhaa5ff06f7b202473;  \n      |               ^~~~\n%Error: /tmp/tmppsdjvix_.v:33:19: syntax error, unexpected IDENTIFIER, expecting ';'\n   33 |     mem[2]  = 64'hhaa5ff06f7b202473;  \n      |                   ^~~~~~~~~~~~~~~~~\n%Error: Exiting due to 2 error(s)\n",
+      "time_s": 37.79188060760498
+    },
+    {
+      "task": "task_09",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 5.061288595199585
+    },
+    {
+      "task": "task_10",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 8.561236143112183
+    },
+    {
+      "task": "task_11",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 10.065077781677246
+    },
+    {
+      "task": "task_12",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 4.5610761642456055
+    },
+    {
+      "task": "task_13",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 5.060654163360596
+    },
+    {
+      "task": "task_14",
+      "success": true,
+      "attempts": 5,
+      "final_stderr": "",
+      "time_s": 46.2990026473999
+    },
+    {
+      "task": "task_15",
+      "success": true,
+      "attempts": 5,
+      "final_stderr": "",
+      "time_s": 18.290364265441895
+    },
+    {
+      "task": "task_16",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 3.0604872703552246
+    },
+    {
+      "task": "task_17",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 2.5611062049865723
+    },
+    {
+      "task": "task_18",
+      "success": false,
+      "attempts": 5,
+      "final_stderr": "%Error: /tmp/tmp_ty4cdq5.v:14:35: syntax error, unexpected STRING\n   14 |     syndrome_o[0] = ^((data_i ^ 72\"hAA0000000000000000\") & 72\"h01B9000000001FFFFF\");\n      |                                   ^~~~~~~~~~~~~~~~~~~~~\n%Error: /tmp/tmp_ty4cdq5.v:15:35: syntax error, unexpected STRING\n   15 |     syndrome_o[1] = ^((data_i ^ 72\"hAA0000000000000000\") & 72\"h025E00000FFFE0003F\");\n      |                                   ^~~~~~~~~~~~~~~~~~~~~\n%Error: /tmp/tmp_ty4cdq5.v:16:35: syntax error, unexpected STRING\n   16 |     syndrome_o[2] = ^((data_i ^ 72\"hAA0000000000000000\") & 72\"h0467003FF003E007C1\");\n      |                                   ^~~~~~~~~~~~~~~~~~~~~\n%Error: /tmp/tmp_ty4cdq5.v:17:35: syntax error, unexpected STRING\n   17 |     syndrome_o[3] = ^((data_i ^ 72\"hAA0000000000000000\") & 72\"h08CD0FC0F03C207842\");\n      |                                   ^~~~~~~~~~~~~~~~~~~~~\n%Error: /tmp/tmp_ty4cdq5.v:18:35: syntax error, unexpected STRING\n   18 |     syndrome_o[4] = ^((data_i ^ 72\"hAA0000000000000000\") & 72\"h10B671C711C4438884\");\n      |                                   ^~~~~~~~~~~~~~~~~~~~~\n%Error: /tmp/tmp_ty4cdq5.v:19:35: syntax error, unexpected STRING\n   19 |     syndrome_o[5] = ^((data_i ^ 72\"hAA0000000000000000\") & 72\"h20B5B65926488C9108\");\n      |                                   ^~~~~~~~~~~~~~~~~~~~~\n%Error: /tmp/tmp_ty4cdq5.v:20:35: syntax error, unexpected STRING\n   20 |     syndrome_o[6] = ^((data_i ^ 72\"hAA0000000000000000\") & 72\"h40CBDAAA4A91152210\");\n      |                                   ^~~~~~~~~~~~~~~~~~~~~\n%Error: /tmp/tmp_ty4cdq5.v:21:35: syntax error, unexpected STRING\n   21 |     syndrome_o[7] = ^((data_i ^ 72\"hAA0000000000000000\") & 72\"h807AED348D221A4420\");\n      |                                   ^~~~~~~~~~~~~~~~~~~~~\n%Error: /tmp/tmp_ty4cdq5.v:94:3: syntax error, unexpected end\n   94 |   end\n      |   ^~~\n%Error: Cannot continue\n",
+      "time_s": 88.80812382698059
+    },
+    {
+      "task": "task_19",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 7.062406539916992
+    }
+  ]
+}

@@ -1,0 +1,148 @@
+{
+  "model": "gpt-4.1-nano",
+  "no_self_refine": false,
+  "no_verilator_tool": false,
+  "average_time_s": 23.931051766872407,
+  "results": [
+    {
+      "task": "task_00",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 10.581692218780518
+    },
+    {
+      "task": "task_01",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 2.559464454650879
+    },
+    {
+      "task": "task_02",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 13.064082860946655
+    },
+    {
+      "task": "task_03",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 3.0605897903442383
+    },
+    {
+      "task": "task_04",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 7.5623939037323
+    },
+    {
+      "task": "task_05",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 14.065689325332642
+    },
+    {
+      "task": "task_06",
+      "success": true,
+      "attempts": 5,
+      "final_stderr": "",
+      "time_s": 38.29453182220459
+    },
+    {
+      "task": "task_07",
+      "success": true,
+      "attempts": 2,
+      "final_stderr": "",
+      "time_s": 11.118188381195068
+    },
+    {
+      "task": "task_08",
+      "success": false,
+      "attempts": 5,
+      "final_stderr": "%Warning-WIDTHEXPAND: /tmp/tmp98dlpx_n.v:48:16: Operator LT expects 32 bits on the LHS, but LHS's VARREF 'addr_q' generates 4 bits.\n                                              : ... note: In instance 'debug_rom_one_scratch'\n   48 |     if (addr_q < $unsigned($clog2(RomSize))) begin\n      |                ^\n                      ... For warning description see https://verilator.org/warn/WIDTHEXPAND?v=5.034\n                      ... Use \"/* verilator lint_off WIDTHEXPAND */\" and lint_on around source to disable this message.\n%Error: Exiting due to 1 warning(s)\n",
+      "time_s": 45.817044734954834
+    },
+    {
+      "task": "task_09",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 8.063472270965576
+    },
+    {
+      "task": "task_10",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 14.06779146194458
+    },
+    {
+      "task": "task_11",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 21.571081399917603
+    },
+    {
+      "task": "task_12",
+      "success": false,
+      "attempts": 5,
+      "final_stderr": "%Error: /tmp/tmpv91zyrt_.v:80:1: syntax error, unexpected end of file, expecting IDENTIFIER or randomize\n   80 | endmodul\n      | ^~~~~~~~\n%Error: Cannot continue\n",
+      "time_s": 42.793943881988525
+    },
+    {
+      "task": "task_13",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 5.063565492630005
+    },
+    {
+      "task": "task_14",
+      "success": false,
+      "attempts": 5,
+      "final_stderr": "%Error: /tmp/tmpeefg6tu5.v:46:1: syntax error, unexpected '}'\n   46 | }\n      | ^\n%Error: Cannot continue\n",
+      "time_s": 84.80879378318787
+    },
+    {
+      "task": "task_15",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 3.0598769187927246
+    },
+    {
+      "task": "task_16",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 6.560865163803101
+    },
+    {
+      "task": "task_17",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 5.563692331314087
+    },
+    {
+      "task": "task_18",
+      "success": false,
+      "attempts": 5,
+      "final_stderr": "%Error: /tmp/tmpdxy3odao.v:94:3: syntax error, unexpected end\n   94 |   end\n      |   ^~~\n%Error: Cannot continue\n",
+      "time_s": 114.8195686340332
+    },
+    {
+      "task": "task_19",
+      "success": true,
+      "attempts": 2,
+      "final_stderr": "",
+      "time_s": 26.124706506729126
+    }
+  ]
+}

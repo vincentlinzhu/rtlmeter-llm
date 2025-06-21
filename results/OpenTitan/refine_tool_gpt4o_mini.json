@@ -1,0 +1,148 @@
+{
+  "model": "gpt-4o-mini",
+  "no_self_refine": false,
+  "no_verilator_tool": false,
+  "average_time_s": 55.389733171463014,
+  "results": [
+    {
+      "task": "task_00",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 32.06990337371826
+    },
+    {
+      "task": "task_01",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 25.07054901123047
+    },
+    {
+      "task": "task_02",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 48.07354378700256
+    },
+    {
+      "task": "task_03",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 35.57313799858093
+    },
+    {
+      "task": "task_04",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 22.067081451416016
+    },
+    {
+      "task": "task_05",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 52.574594259262085
+    },
+    {
+      "task": "task_06",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 97.08752942085266
+    },
+    {
+      "task": "task_07",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 35.570706605911255
+    },
+    {
+      "task": "task_08",
+      "success": true,
+      "attempts": 2,
+      "final_stderr": "",
+      "time_s": 156.68198347091675
+    },
+    {
+      "task": "task_09",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 18.06861662864685
+    },
+    {
+      "task": "task_10",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 48.07421875
+    },
+    {
+      "task": "task_11",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 79.58304405212402
+    },
+    {
+      "task": "task_12",
+      "success": true,
+      "attempts": 4,
+      "final_stderr": "",
+      "time_s": 199.797137260437
+    },
+    {
+      "task": "task_13",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 23.067261457443237
+    },
+    {
+      "task": "task_14",
+      "success": true,
+      "attempts": 2,
+      "final_stderr": "",
+      "time_s": 65.08335041999817
+    },
+    {
+      "task": "task_15",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 14.06325101852417
+    },
+    {
+      "task": "task_16",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 17.565924644470215
+    },
+    {
+      "task": "task_17",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 16.56600284576416
+    },
+    {
+      "task": "task_18",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 86.08517360687256
+    },
+    {
+      "task": "task_19",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 35.07165336608887
+    }
+  ]
+}
