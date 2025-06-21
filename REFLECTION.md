@@ -36,33 +36,44 @@ but they leave more bugs unsolved.
 
 ## Why the Agent Succeeds or Fails
 
-The agent succeeds when it can view compile errors and apply multiple fixes. It
-fails on multi‑step issues or uncommon constructs that exceed the model's context
-or training. Larger models or extended context windows could help.
+Viewing compile errors and applying multiple fixes: The agent parses Verilator’s error messages (line numbers, signal names, missing modules, type mismatches) and uses them as concrete targets for patch generation. When the first suggested fix still triggers an error, it can loop back—reading the new error and proposing another edit. Each round of error inspection–patch application–recompile narrows the search space. By iterating, the agent gradually converges on a correct solution for one-step or small multi-edit bugs, effectively “debugging” like a human engineer would.
+
+Failing on multi-step issues or uncommon constructs: Complex bugs often involve a sequence of dependent edits (e.g., add an interface signal, adjust a state machine, then update a bus arbitration logic) or rare HDL idioms not seen during the model’s pretraining. If the required sequence exceeds its context window or training examples, the agent loses track of earlier edits or misinterprets the fix order. Why it hurts: Without long-range reasoning over many interdependent changes, the agent can get “stuck” after a few iterations, re-introduce old errors, or fix the wrong part of the design. Coverage gaps in the model’s HDL knowledge exacerbate this, leading to abandoned multi-step repairs.
+
+Mitigation via larger models or extended context windows: Upgrading to an LLM with more parameters or a 64K-token context window lets you pack more of the Verilog source, error logs, and past patch history into each prompt.A bigger model can better generalize to unseen patterns, while a larger context lets the agent remember the entire edit history—both critical for orchestrating multi-step bug fixes.
 
 ## Scaling Up Inference
 
-Increasing the tool‑call budget or running inference on GPUs shortens overall
-runtime. Batching several tasks hides latency when evaluating larger datasets.
+Increase the tool-call budget: Most agent frameworks (and many API-based systems) impose a limit on how many times you can invoke an external tool or subroutine—here, Verilator or another hardware-simulation engine—per task or per unit time. By raising that limit, you let the agent splice in more fine-grained checks, re-runs, or exploratory calls to Verilator. That means it can do deeper or broader “searches” over possible fixes without hitting a quota ceiling.
+
+Run inference on GPUs: "Inference" here refers to the agent’s own model calls—e.g. to a local LLM or neural network that decides how to generate or refine a fix. Moving those model invocations from CPU to GPU hardware (or specialized accelerators) vastly cuts per-call latency. If each decision step (generate patch, evaluate, refine) becomes 5×–10× faster on a GPU, the overall end-to-end time for each task drops accordingly. You get higher throughput without touching your model code.
+
+Batch tasks to hide latency: Instead of sending one circuit-fix job through the pipeline at a time (tool call → model inference → tool call → …), you collect a batch of N jobs and process them together. For example, send N code fragments in a single LLM request, or queue up N Verilator runs concurrently. Many fixed costs—network round-trips, tool startup, model loading—are paid once per batch rather than once per sample. The “per-item” overhead goes down roughly by 1/N, so your effective throughput climbs even if individual runtimes stay the same.
 
 ## Training a Better Base Model
 
-Domain‑adaptive pretraining on public HDL repositories and synthesis logs would
-teach the model more Verilog patterns. This improves understanding before any
-supervised fine‑tuning.
+Domain-adaptive pretraining on public HDL repositories: Take an existing LLM checkpoint and continue unsupervised training on a large corpus of Verilog, SystemVerilog, and synthesis-tool logs pulled from open projects (e.g., OpenROAD, lowRISC/Opentitan). The model internalizes HDL-specific syntax, naming conventions, and common error messages. It learns patterns like parameter declarations, clock-domain crossings, and typical bus protocols before any supervised fine-tuning.
+
+Incorporating synthesis and simulation logs: Mix in textual outputs from tools like Synopsys VCS, Xilinx Vivado, and Verilator (including warnings and timing reports) during pretraining. The model becomes fluent in the “language” of EDA tool diagnostics, so it more accurately maps error/warning phrases to the underlying code constructs that need adjustment.
+
+
 
 ## Collecting Training Data
 
-Open‑source projects such as OpenROAD or chipyard contain rich histories of bug
-fixes. Mining their diffs produces paired examples of errors and corrections.
-Synthetic data can be created by intentionally corrupting designs and recording
-how they are fixed.
+Collecting Training Data
+Mining open-source bug-fix diffs: Scrape Git commit histories from HDL-rich repos (e.g., chipyard, OpenROAD) and extract paired (buggy code → fixed code) examples via git diff. You get real-world repair patterns—off-by-one index fixes, missing signal declarations, wrong parameter names—at scale, furnishing the model with authentic edit sequences.
+
+Generating synthetic corruptions: Programmatically introduce common bug classes (e.g., drop sensitivity list entries, mis-case port names, invert logic unintentionally) into clean HDL sources, then record the original as the “ground-truth” fix. Synthetic data lets you amplify underrepresented bug types, ensuring the model sees balanced examples of rare but critical mistakes.
+
+Labeling by difficulty and error type: Annotate each example with metadata (single-line typo vs. multi-module architectural change, combinational vs. sequential bug). During fine-tuning, you can curriculum-schedule training—start with simple one-edit fixes, then progress to more complex multi-module transformations—improving learning efficiency.
 
 ## Involving Human Annotators
 
-A review loop with hardware engineers lets humans grade patches and create small
-reproducers. Their feedback expands the dataset with high‑quality
-examples and reduces noise in automatically mined diffs.
+Review loop with hardware engineers: After the agent proposes a patch, a human reviews correctness, flags false positives, and refines counterexamples (small reproducer testbenches). Human feedback corrects model misunderstandings early, pruning out bad patches and reinforcing high-quality patterns.
+
+Creating focused reproducers: Annotators write minimal testbenches or input vectors that expose the bug and validate the fix automatically. These reproducers serve as concrete reward signals during training and as unit tests during inference, ensuring that learned edits actually resolve the intended issue.
+
+Active-learning to prioritize annotator effort: Use model uncertainty metrics (e.g., entropy over generated diffs) to surface the most ambiguous cases for human labeling. You focus scarce annotation resources on the examples that will yield the greatest improvement in model robustness and accuracy.
 
 ## Appendix Tables
 
