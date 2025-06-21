@@ -1,0 +1,3 @@
+bug_file: bug.sv
+fixed_file: fixed.sv
+trace: trace.log

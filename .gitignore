@@ -1,10 +1,7 @@
 rtlmeter
 verilator
-tasks
-trajectories
 run1
 run2
-OpenTitanTasks
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
