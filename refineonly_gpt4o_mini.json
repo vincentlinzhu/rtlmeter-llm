@@ -1,0 +1,22 @@
+{
+  "model": "gpt-4o-mini",
+  "no_self_refine": false,
+  "no_verilator_tool": true,
+  "average_time_s": 16.063923597335815,
+  "results": [
+    {
+      "task": "task_00",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 23.56610083580017
+    },
+    {
+      "task": "task_01",
+      "success": true,
+      "attempts": 1,
+      "final_stderr": "",
+      "time_s": 8.56174635887146
+    }
+  ]
+}
